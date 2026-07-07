@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculateur de salaire — Cocottes Gourmandes</title>
+<meta name="description" content="Calculateur de salaire IDCC 1501 — brut, net, coût employeur, RGDU 2026">
+<meta name="theme-color" content="#36543F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root { --orange:#F26A2E; --vert:#36543F; --brique:#90321F; --gris:#6b7280; --bord:#e5e7eb; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,sans-serif; color:#111827; background:#fff; }
+  .bande { height:6px; background:linear-gradient(90deg,var(--orange) 0%,var(--orange) 60%,var(--vert) 60%,var(--vert) 100%); }
+  header { padding:18px 20px 14px; border-bottom:1px solid var(--bord); }
+  .sur { font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--orange); font-weight:700; }
+  h1 { font-size:22px; margin:2px 0 4px; color:var(--vert); }
+  header p { font-size:12px; color:var(--gris); margin:0; }
+  main { max-width:680px; margin:0 auto; padding:18px 16px 30px; }
+  label.txt { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--gris); margin-bottom:4px; }
+  select, input[type=number] { font:inherit; padding:9px 10px; border:1px solid #d1d5db; border-radius:8px; background:#fff; min-height:44px; }
+  input[type=number] { text-align:right; font-variant-numeric:tabular-nums; width:100px; }
+  input[type=number]:focus, select:focus { outline:none; border-color:var(--orange); box-shadow:0 0 0 1px var(--orange); }
+  select { width:100%; }
+  .rang { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin:14px 0; }
+  .check { display:flex; align-items:center; gap:8px; font-size:14px; padding-bottom:10px; cursor:pointer; }
+  input[type=checkbox] { width:18px; height:18px; accent-color:var(--orange); }
+  .note-ok { font-size:12px; color:#4b5563; border-left:3px solid var(--vert); padding:4px 0 4px 12px; margin:10px 0; }
+  .note-ko { font-size:12px; font-weight:600; color:#fff; background:var(--brique); border-radius:8px; padding:8px 12px; margin:10px 0; }
+  .note-i  { font-size:12px; color:var(--gris); margin:4px 0 0; }
+  .cles { border:1px solid var(--bord); border-radius:12px; overflow:hidden; margin:18px 0; }
+  .cles .fil { height:4px; background:var(--orange); }
+  .cles .grid { display:grid; grid-template-columns:1fr 1fr; }
+  .cles .cell { padding:14px 16px; }
+  .cles .cell + .cell { border-left:1px solid var(--bord); }
+  .cles .lib { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--gris); font-weight:600; }
+  .cles .val { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .cles .v1 { color:var(--vert); } .cles .v2 { color:var(--orange); }
+  .cles .sub { font-size:12px; color:#9ca3af; font-variant-numeric:tabular-nums; margin-top:2px; }
+  h2 { font-size:16px; color:var(--vert); margin:22px 0 4px; }
+  h2 small { font-weight:400; font-size:12px; color:#9ca3af; }
+  .entetes { display:flex; font-size:11px; font-weight:600; color:var(--gris); }
+  .ligne { display:flex; align-items:baseline; padding:7px 0; border-bottom:1px solid #f3f4f6; font-size:14px; }
+  .ligne .lib { flex:1; color:#1f2937; }
+  .ligne .a, .ligne .b, .entetes .a, .entetes .b { width:110px; text-align:right; font-variant-numeric:tabular-nums; }
+  .ligne .b { color:#9ca3af; }
+  .ligne.fort { font-weight:600; }
+  .ligne.neg .lib, .ligne.neg .a { color:var(--brique); }
+  .ligne.neg .b { color:rgba(144,50,31,.55); }
+  details { border:1px solid var(--bord); border-radius:12px; margin-top:22px; }
+  summary { padding:13px 16px; font-weight:600; color:var(--vert); cursor:pointer; list-style:none; display:flex; }
+  summary::after { content:"+"; margin-left:auto; color:var(--orange); }
+  details[open] summary::after { content:"−"; }
+  .params { padding:0 16px 16px; border-top:1px solid #f3f4f6; }
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+  .pgrid input { width:100%; }
+  .gligne { display:flex; align-items:center; gap:10px; font-size:14px; padding:3px 0; }
+  .gligne .lib { flex:1; }
+  .gligne .smic { color:var(--orange); font-weight:600; font-size:12px; }
+  .gligne input { width:90px; min-height:38px; padding:6px 8px; }
+  .src { font-size:11px; color:#9ca3af; margin-top:10px; line-height:1.5; }
+  footer { font-size:11px; color:#9ca3af; text-align:center; padding:0 20px 30px; line-height:1.5; }
+  @media (max-width:480px){ .ligne .a,.ligne .b,.entetes .a,.entetes .b{width:88px;font-size:13px;} }
+  .btn-pdf { font:inherit; font-weight:600; padding:11px 16px; border:none; border-radius:10px; background:var(--vert); color:#fff; cursor:pointer; min-height:44px; }
+  .btn-pdf:active { opacity:.85; }
+  #printZone { display:none; }
+  @media print {
+    @page { size: A4; margin: 14mm; }
+    body > * { display:none !important; }
+    #printZone { display:block !important; font-size:12px; color:#111; }
+    #printZone .pz-bande { height:5px; background:linear-gradient(90deg,#F26A2E 0%,#F26A2E 60%,#36543F 60%,#36543F 100%); margin-bottom:14px; }
+    #printZone h1 { font-size:17px; color:#36543F; margin:0 0 2px; }
+    #printZone .pz-sur { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:#F26A2E; font-weight:700; }
+    #printZone .pz-2col { display:flex; justify-content:space-between; gap:20px; margin:12px 0; }
+    #printZone .pz-bloc { border:1px solid #ddd; border-radius:8px; padding:10px 12px; flex:1; }
+    #printZone .pz-bloc b { color:#36543F; }
+    #printZone table { width:100%; border-collapse:collapse; margin-top:10px; }
+    #printZone th { text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:#666; border-bottom:1.5px solid #36543F; padding:4px 6px; }
+    #printZone th.n, #printZone td.n { text-align:right; font-variant-numeric:tabular-nums; }
+    #printZone td { padding:5px 6px; border-bottom:1px solid #eee; }
+    #printZone tr.fort td { font-weight:700; }
+    #printZone tr.neg td { color:#90321F; }
+    #printZone tr.sect td { font-weight:700; color:#36543F; border-bottom:1.5px solid #36543F; padding-top:14px; text-transform:uppercase; font-size:10px; letter-spacing:.04em; }
+    #printZone .pz-foot { margin-top:18px; font-size:9.5px; color:#777; line-height:1.5; }
+    #printZone .pz-sign { display:flex; gap:30px; margin-top:24px; }
+    #printZone .pz-sign div { flex:1; border-top:1px solid #999; padding-top:4px; font-size:10px; color:#555; }
+  }
+</style>
+</head>
+<body>
+<div class="bande"></div>
+<header>
+  <div class="sur">Cocottes Gourmandes · RH</div>
+  <h1>Calculateur de salaire IDCC 1501</h1>
+  <p>Barèmes 2026 vérifiés · SMIC 12,31 €/h (RGDU gelé 12,02 €) · Navigo 90,80 € · Grille avenant n°72 · Estimation indicative</p>
+</header>
+<main>
+  <label class="txt" for="poste">Poste — grille conventionnelle</label>
+  <select id="poste"></select>
+  <p class="note-i" id="noteSmic" hidden></p>
+
+  <div class="rang">
+    <div><label class="txt">Taux horaire brut</label><input type="number" id="tauxH" step="0.01" min="0"> €/h</div>
+    <div><label class="txt">Heures / semaine</label>
+      <input type="number" id="heuresA" step="0.5" min="1" style="width:80px">
+      <span id="vsWrap"> vs <input type="number" id="heuresB" step="0.5" min="1" style="width:80px"></span>
+    </div>
+    <label class="check"><input type="checkbox" id="comparer" checked> Comparer</label>
+  </div>
+
+  <div id="conformite"></div>
+
+  <div class="rang">
+    <label class="check"><input type="checkbox" id="avecRepas" checked> Repas fourni (<span id="repasLbl"></span> €/j)</label>
+    <label class="check"><input type="checkbox" id="avecNavigo" checked> Navigo 50 % (<span id="navigoLbl"></span> €)</label>
+    <div><label class="txt">Jours / mois</label><input type="number" id="joursMois" step="1" min="1" style="width:70px"></div>
+    <div><label class="txt">Prime mens.</label><input type="number" id="primeMens" step="10" min="0" style="width:90px"></div>
+    <div><label class="txt">PAS %</label><input type="number" id="tauxPAS" step="0.1" min="0" style="width:70px"></div>
+  </div>
+
+  <div class="cles"><div class="fil"></div>
+    <div class="grid">
+      <div class="cell"><div class="lib" id="libNet"></div><div class="val v1" id="valNet"></div><div class="sub" id="subNet"></div></div>
+      <div class="cell"><div class="lib" id="libCout"></div><div class="val v2" id="valCout"></div><div class="sub" id="subCout"></div></div>
+    </div>
+  </div>
+
+  <div class="rang" style="margin-top:4px">
+    <div><label class="txt">Site (pour le PDF)</label>
+      <select id="site" style="width:auto;min-width:220px">
+        <option value="CD9">Châteaudun · Adamoulya</option>
+        <option value="LB8">Laborde · Damdoum</option>
+      </select>
+    </div>
+    <button class="btn-pdf" id="btnPdf" type="button">📄 Bulletin type PDF (A4)</button>
+  </div>
+
+  <h2>Détail du bulletin</h2>
+  <div class="entetes"><span style="flex:1"></span><span class="a" id="colA"></span><span class="b" id="colB"></span></div>
+  <div id="bulletin"></div>
+
+  <h2>Côté employeur <small>(taux pleins 2026)</small></h2>
+  <div id="employeur"></div>
+
+  <details>
+    <summary>Paramètres, taux &amp; grille conventionnelle</summary>
+    <div class="params">
+      <div class="pgrid" id="pgrid"></div>
+      <p class="txt" style="margin-top:18px">Grille des minima IDCC 1501 (€/h brut) — avenant n°72, valeurs conventionnelles brutes</p>
+      <p class="src">Les échelons sous le SMIC restent affichés à leur valeur conventionnelle : le calculateur applique automatiquement le SMIC comme plancher. À la prochaine renégociation de branche, mets à jour ces valeurs.</p>
+      <div id="glist" style="margin-top:8px"></div>
+      <p class="src">Niveau V (cadres, minima annuels tous éléments confondus) : A 44 645,78 € · B 46 032,71 € · C 72 408,11 € — hors calculateur horaire.
+      Sources : Légifrance (avenant n°72), urssaf.fr, service-public.fr (RGDU : Tmin 0,0200 / Tdelta 0,3781 / P 1,75 / SMIC gelé 12,02 €). Modifications sauvegardées sur cet appareil.</p>
+      <p style="margin-top:12px"><button id="reset" style="font:inherit;padding:8px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer">↩︎ Réinitialiser les valeurs par défaut</button></p>
+    </div>
+  </details>
+</main>
+<div id="printZone"></div>
+<footer>Estimation indicative — non-cadre, moins de 11 salariés, hors versement mobilité. RGDU 2026 : dégressive jusqu'à 3 SMIC, SMIC gelé 12,02 €. Navigo : 50 % obligatoire, exonéré et non imposable (prorata sous 17,5 h/sem). Mutuelle Alan : part employeur hors forfait social. Bulletin officiel : Impulsa.</footer>
+
+<script>
+"use strict";
+// ============ BARÈMES 2026 VÉRIFIÉS ============
+const DEFAUTS = {
+  smicH: 12.31, smicRGDU: 12.02, pmss: 4005, repasValeur: 4.35,
+  navigo: 90.80, navigoPct: 50, alanTotal: 55, alanEmpPct: 100,
+  sal: { vieillessePlaf: 6.90, vieillesseDeplaf: 0.40, arrcoT1: 3.15, cegT1: 0.86, csgCrds: 9.70 },
+  pat: { maladie: 13.00, vieillessePlaf: 8.55, vieillesseDeplaf: 2.11, af: 5.25, arrcoT1: 4.72, cegT1: 1.29,
+         chomage: 4.00, ags: 0.25, fnal: 0.10, csa: 0.30, atmp: 1.50, formation: 0.55, taxeApprentissage: 0.68, dialogueSocial: 0.016 },
+  rgdu: { tmin: 0.0200, tdelta: 0.3781, puissance: 1.75 },
+};
+const GRILLE_DEFAUT = [
+  { id:"I-A", label:"Niv. I — éch. A · équipier débutant", taux:11.88 },
+  { id:"I-B", label:"Niv. I — éch. B", taux:11.90 },
+  { id:"II-A", label:"Niv. II — éch. A · employé qualifié", taux:12.22 },
+  { id:"II-B", label:"Niv. II — éch. B", taux:12.45 },
+  { id:"III-A", label:"Niv. III — éch. A · assistant manager", taux:12.82 },
+  { id:"III-B", label:"Niv. III — éch. B", taux:12.93 },
+  { id:"III-C", label:"Niv. III — éch. C", taux:13.98 },
+  { id:"IV-A", label:"Niv. IV — éch. A · responsable de site", taux:15.01 },
+  { id:"IV-B", label:"Niv. IV — éch. B", taux:15.43 },
+  { id:"IV-C", label:"Niv. IV — éch. C", taux:16.05 },
+  { id:"IV-D", label:"Niv. IV — éch. D", taux:17.34 },
+];
+
+let P = JSON.parse(JSON.stringify(DEFAUTS));
+let grille = JSON.parse(JSON.stringify(GRILLE_DEFAUT));
+try {
+  const cfg = JSON.parse(localStorage.getItem("paie-config") || "null");
+  if (cfg) {
+    if (cfg.grille) grille = cfg.grille;
+    if (cfg.P) P = Object.assign({}, DEFAUTS, cfg.P,
+      { sal: Object.assign({}, DEFAUTS.sal, cfg.P.sal), pat: Object.assign({}, DEFAUTS.pat, cfg.P.pat), rgdu: Object.assign({}, DEFAUTS.rgdu, cfg.P.rgdu) });
+  }
+} catch (e) {}
+function sauver() { try { localStorage.setItem("paie-config", JSON.stringify({ P, grille })); } catch (e) {} }
+
+const eur = (n, dec) => (n == null || isNaN(n)) ? "—" :
+  n.toLocaleString("fr-FR", { minimumFractionDigits: dec ?? 2, maximumFractionDigits: dec ?? 2 }) + " €";
+
+// ============ MOTEUR 2026 ============
+function calculer(o) {
+  const hMens = o.heures * 52 / 12;
+  const brutBase = o.tauxH * hMens + (o.primeMens || 0);
+  const avNature = o.avecRepas ? P.repasValeur * o.joursMois : 0;
+  const brutSoumis = brutBase + avNature;
+  const plafond = Math.min(brutSoumis, P.pmss);
+  const s = P.sal, p = P.pat;
+  const cotS = plafond*s.vieillessePlaf/100 + brutSoumis*s.vieillesseDeplaf/100
+             + plafond*(s.arrcoT1+s.cegT1)/100 + brutSoumis*0.9825*s.csgCrds/100;
+  const alanSal = P.alanTotal * (1 - P.alanEmpPct/100);
+  const alanPat = P.alanTotal * (P.alanEmpPct/100);
+  const prorata = o.heures >= 17.5 ? 1 : o.heures/17.5;
+  const navigoRemb = o.avecNavigo ? (P.navigo * P.navigoPct/100) * prorata : 0;
+  const netAvantImpot = brutSoumis - cotS - alanSal - avNature + navigoRemb;
+  const pas = (netAvantImpot + avNature - navigoRemb) * ((o.tauxPAS||0)/100);
+  const netApresImpot = netAvantImpot - pas;
+  const tauxDeplaf = p.maladie+p.vieillesseDeplaf+p.af+p.chomage+p.ags+p.fnal+p.csa+p.atmp+p.formation+p.taxeApprentissage+p.dialogueSocial;
+  const cotP = brutSoumis*tauxDeplaf/100 + plafond*(p.vieillessePlaf+p.arrcoT1+p.cegT1)/100;
+  const smicRef = P.smicRGDU * hMens;
+  const ratio = brutSoumis / smicRef;
+  let coef = 0;
+  if (ratio < 3 && ratio > 0) {
+    const base = 0.5 * ((3*smicRef)/brutSoumis - 1);
+    coef = P.rgdu.tmin + P.rgdu.tdelta * Math.pow(Math.max(0, Math.min(1, base)), P.rgdu.puissance);
+    coef = Math.min(coef, P.rgdu.tmin + P.rgdu.tdelta);
+  }
+  const reduction = brutSoumis * coef;
+  const coutEmployeur = brutSoumis + cotP - reduction + alanPat + navigoRemb;
+  return { hMens, brutBase, avNature, brutSoumis, cotS, netAvantImpot, pas, netApresImpot, cotP, coef, reduction, coutEmployeur, alanSal, alanPat, navigoRemb };
+}
+
+// ============ ÉTAT UI ============
+const E = {
+  poste: "IV-A", tauxH: 15.01, heuresA: 35, heuresB: 30, comparer: true,
+  joursMois: 21, avecRepas: true, avecNavigo: true, tauxPAS: 0, primeMens: 0,
+};
+const $ = (id) => document.getElementById(id);
+
+function ligne(lib, a, b, cls) {
+  return '<div class="ligne ' + (cls||"") + '"><span class="lib">' + lib + '</span><span class="a">' + eur(a) + '</span>' +
+    (E.comparer ? '<span class="b">' + eur(b) + '</span>' : '') + '</div>';
+}
+
+function rendre() {
+  const posteObj = grille.find(g => g.id === E.poste) || grille[0];
+  const miniConv = posteObj.taux;
+  const miniEff = Math.max(miniConv || 0, P.smicH);
+  const conforme = E.tauxH >= miniEff - 0.001;
+  const parSmic = miniConv != null && miniConv < P.smicH;
+
+  // Sélecteur
+  $("poste").innerHTML = grille.map(g => {
+    const m = Math.max(g.taux || 0, P.smicH);
+    const s = (g.taux != null && g.taux < P.smicH) ? " (SMIC)" : "";
+    return '<option value="' + g.id + '"' + (g.id===E.poste?" selected":"") + '>' + g.label + " — mini " + m.toLocaleString("fr-FR",{minimumFractionDigits:2}) + " €/h" + s + "</option>";
+  }).join("");
+  $("noteSmic").hidden = !parSmic;
+  if (parSmic) $("noteSmic").textContent = "ℹ️ Minimum conventionnel (" + eur(miniConv) + "/h) rattrapé par le SMIC → minimum applicable : " + eur(P.smicH) + "/h.";
+
+  $("conformite").innerHTML = conforme
+    ? '<p class="note-ok">Conforme — ≥ minimum applicable (' + eur(miniEff) + '/h : ' + (parSmic ? "SMIC" : "mini conventionnel") + ').</p>'
+    : '<p class="note-ko">⛔ Sous le minimum applicable (' + eur(miniEff) + '/h) — illégal.</p>';
+
+  $("repasLbl").textContent = P.repasValeur.toLocaleString("fr-FR");
+  $("navigoLbl").textContent = (P.navigo*P.navigoPct/100).toLocaleString("fr-FR",{minimumFractionDigits:2});
+  $("vsWrap").style.display = E.comparer ? "" : "none";
+
+  const joursB = Math.max(1, Math.round(E.joursMois * E.heuresB / E.heuresA)) || E.joursMois;
+  const A = calculer({ tauxH:E.tauxH, heures:E.heuresA, joursMois:E.joursMois, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens });
+  const B = calculer({ tauxH:E.tauxH, heures:E.heuresB, joursMois:joursB, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens });
+
+  $("libNet").textContent = "Net mensuel (" + E.heuresA + " h)";
+  $("valNet").textContent = eur(E.tauxPAS>0 ? A.netApresImpot : A.netAvantImpot);
+  $("subNet").textContent = E.comparer ? E.heuresB + " h : " + eur(E.tauxPAS>0 ? B.netApresImpot : B.netAvantImpot) : (E.tauxPAS>0 ? "après impôt" : "avant impôt");
+  $("libCout").textContent = "Coût employeur (" + E.heuresA + " h)";
+  $("valCout").textContent = eur(A.coutEmployeur);
+  $("subCout").textContent = E.comparer ? E.heuresB + " h : " + eur(B.coutEmployeur) + " · économie " + eur((A.coutEmployeur-B.coutEmployeur)*12, 0) + "/an" : "RGDU −" + eur(A.reduction);
+
+  $("colA").textContent = E.heuresA + " h/sem";
+  $("colB").textContent = E.comparer ? E.heuresB + " h/sem" : "";
+
+  let h = ligne("Brut mensuel (" + A.hMens.toFixed(2) + " h" + (E.comparer ? " / " + B.hMens.toFixed(2) + " h" : "") + ")", A.brutBase, B.brutBase);
+  if (E.avecRepas) h += ligne("Avantage nature repas", A.avNature, B.avNature);
+  h += ligne("Brut soumis à cotisations", A.brutSoumis, B.brutSoumis, "fort");
+  h += ligne("Cotisations salariales", -A.cotS, -B.cotS, "neg");
+  if (A.alanSal > 0.005) h += ligne("Mutuelle Alan part salariale (" + (100-P.alanEmpPct) + " %)", -A.alanSal, -B.alanSal, "neg");
+  if (E.avecNavigo) h += ligne("Remboursement Navigo (" + P.navigoPct + " %, exonéré)", A.navigoRemb, B.navigoRemb);
+  h += ligne("Net avant impôt (versé)", A.netAvantImpot, B.netAvantImpot, "fort");
+  if (E.tauxPAS > 0) {
+    h += ligne("Prélèvement à la source (" + E.tauxPAS + " %)", -A.pas, -B.pas, "neg");
+    h += ligne("Net après impôt", A.netApresImpot, B.netApresImpot, "fort");
+  }
+  $("bulletin").innerHTML = h;
+
+  let e = ligne("Cotisations patronales brutes", A.cotP, B.cotP);
+  e += ligne("RGDU 2026 (coef " + (A.coef*100).toFixed(2) + " % / " + (B.coef*100).toFixed(2) + " %)", -A.reduction, -B.reduction);
+  e += ligne("Mutuelle Alan part employeur (" + P.alanEmpPct + " %)", A.alanPat, B.alanPat);
+  if (E.avecNavigo) e += ligne("Remboursement Navigo", A.navigoRemb, B.navigoRemb);
+  e += ligne("Coût employeur mensuel", A.coutEmployeur, B.coutEmployeur, "fort");
+  e += ligne("Coût employeur annuel", A.coutEmployeur*12, B.coutEmployeur*12, "fort");
+  $("employeur").innerHTML = e;
+
+  rendreParams();
+}
+
+function champP(lib, get, set, step) {
+  const d = document.createElement("label");
+  d.innerHTML = '<span class="txt">' + lib + '</span>';
+  const i = document.createElement("input");
+  i.type = "number"; i.step = step || "0.01"; i.value = get();
+  i.oninput = () => { set(parseFloat(i.value) || 0); sauver(); rendre(); };
+  d.appendChild(i);
+  return d;
+}
+function rendreParams() {
+  const pg = $("pgrid"); pg.innerHTML = "";
+  [
+    ["SMIC payé €/h", () => P.smicH, v => P.smicH = v],
+    ["SMIC RGDU (gelé) €/h", () => P.smicRGDU, v => P.smicRGDU = v],
+    ["Repas €/jour", () => P.repasValeur, v => P.repasValeur = v],
+    ["AT/MP %", () => P.pat.atmp, v => P.pat.atmp = v],
+    ["Alan — cotisation totale €", () => P.alanTotal, v => P.alanTotal = v],
+    ["Alan — part employeur %", () => P.alanEmpPct, v => P.alanEmpPct = Math.min(100, v), "1"],
+    ["Navigo mensuel €", () => P.navigo, v => P.navigo = v],
+    ["Navigo — prise en charge %", () => P.navigoPct, v => P.navigoPct = Math.max(50, Math.min(100, v)), "1"],
+    ["RGDU Tmin", () => P.rgdu.tmin, v => P.rgdu.tmin = v, "0.0001"],
+    ["RGDU Tdelta", () => P.rgdu.tdelta, v => P.rgdu.tdelta = v, "0.0001"],
+  ].forEach(([l, g, s, st]) => pg.appendChild(champP(l, g, s, st)));
+
+  const gl = $("glist"); gl.innerHTML = "";
+  grille.forEach((g) => {
+    const d = document.createElement("div"); d.className = "gligne";
+    const smic = (g.taux != null && g.taux < P.smicH) ? ' <span class="smic">→ ' + P.smicH.toLocaleString("fr-FR",{minimumFractionDigits:2}) + ' € appliqué (SMIC)</span>' : "";
+    d.innerHTML = '<span class="lib">' + g.label + smic + '</span>';
+    const i = document.createElement("input");
+    i.type = "number"; i.step = "0.01"; i.value = g.taux ?? "";
+    i.oninput = () => { g.taux = parseFloat(i.value) || null; sauver(); rendre(); };
+    d.appendChild(i);
+    gl.appendChild(d);
+  });
+}
+
+// ============ LIAISONS ============
+function lier(id, cle, type) {
+  const el = $(id);
+  if (type === "check") { el.checked = E[cle]; el.onchange = () => { E[cle] = el.checked; rendre(); }; }
+  else { el.value = E[cle]; el.oninput = () => { E[cle] = parseFloat(el.value) || 0; rendre(); }; }
+}
+lier("tauxH","tauxH"); lier("heuresA","heuresA"); lier("heuresB","heuresB");
+lier("joursMois","joursMois"); lier("primeMens","primeMens"); lier("tauxPAS","tauxPAS");
+lier("comparer","comparer","check"); lier("avecRepas","avecRepas","check"); lier("avecNavigo","avecNavigo","check");
+$("poste").onchange = (ev) => {
+  E.poste = ev.target.value;
+  const t = grille.find(g => g.id === E.poste)?.taux;
+  if (t) { E.tauxH = Math.max(t, P.smicH); $("tauxH").value = E.tauxH.toFixed(2); }
+  rendre();
+};
+$("reset").onclick = () => {
+  if (!confirm("Remettre tous les taux et la grille aux valeurs par défaut ?")) return;
+  P = JSON.parse(JSON.stringify(DEFAUTS)); grille = JSON.parse(JSON.stringify(GRILLE_DEFAUT));
+  sauver(); rendre();
+};
+
+const SITES = {
+  CD9: { nom: "Cocottes Gourmandes — Châteaudun", soc: "SAS ADAMOULYA", adr: "14 rue de Châteaudun, 75009 Paris", siren: "SIREN 939 370 169" },
+  LB8: { nom: "Cocottes Gourmandes — Laborde", soc: "SAS DAMDOUM", adr: "42 rue de Laborde, 75008 Paris", siren: "" },
+};
+function bulletinPDF() {
+  const site = SITES[$("site").value];
+  const posteObj = grille.find(g => g.id === E.poste) || grille[0];
+  const A = calculer({ tauxH:E.tauxH, heures:E.heuresA, joursMois:E.joursMois, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens });
+  const dte = new Date().toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
+  const tr = (lib, v, cls) => '<tr class="'+(cls||"")+'"><td>'+lib+'</td><td class="n">'+eur(v)+'</td></tr>';
+  let rows = "";
+  rows += tr("Salaire de base ("+A.hMens.toFixed(2)+" h × "+eur(E.tauxH)+")", E.tauxH*A.hMens);
+  if (E.primeMens > 0) rows += tr("Prime mensuelle", E.primeMens);
+  if (E.avecRepas) rows += tr("Avantage en nature repas ("+E.joursMois+" j × "+eur(P.repasValeur)+")", A.avNature);
+  rows += tr("Brut soumis à cotisations", A.brutSoumis, "fort");
+  rows += tr("Cotisations salariales (vieillesse, retraite compl., CSG/CRDS)", -A.cotS, "neg");
+  if (A.alanSal > 0.005) rows += tr("Mutuelle Alan — part salariale", -A.alanSal, "neg");
+  if (E.avecRepas) rows += tr("Reprise avantage en nature", -A.avNature, "neg");
+  if (E.avecNavigo) rows += tr("Remboursement Navigo ("+P.navigoPct+" % — exonéré)", A.navigoRemb);
+  rows += tr("Net à payer avant impôt", A.netAvantImpot, "fort");
+  if (E.tauxPAS > 0) {
+    rows += tr("Prélèvement à la source ("+E.tauxPAS+" %)", -A.pas, "neg");
+    rows += tr("Net payé après impôt", A.netApresImpot, "fort");
+  }
+  rows += '<tr class="sect"><td>Coût employeur</td><td></td></tr>';
+  rows += tr("Cotisations patronales (taux pleins 2026)", A.cotP);
+  rows += tr("Réduction générale RGDU 2026 (coef "+(A.coef*100).toFixed(2)+" %)", -A.reduction);
+  rows += tr("Mutuelle Alan — part employeur ("+P.alanEmpPct+" %)", A.alanPat);
+  if (E.avecNavigo) rows += tr("Remboursement Navigo", A.navigoRemb);
+  rows += tr("Coût total employeur mensuel", A.coutEmployeur, "fort");
+  rows += tr("Coût total employeur annuel (×12)", A.coutEmployeur*12, "fort");
+
+  $("printZone").innerHTML =
+    '<div class="pz-bande"></div>' +
+    '<div class="pz-sur">Cocottes Gourmandes · Bulletin type — simulation</div>' +
+    '<h1>Bulletin de salaire type — estimation</h1>' +
+    '<div style="font-size:10.5px;color:#666">Édité le ' + dte + ' · Convention collective restauration rapide (IDCC 1501)</div>' +
+    '<div class="pz-2col">' +
+      '<div class="pz-bloc"><b>Employeur</b><br>' + site.soc + '<br>' + site.nom + '<br>' + site.adr + (site.siren ? '<br>' + site.siren : '') + '</div>' +
+      '<div class="pz-bloc"><b>Salarié</b><br>Nom : ______________________________<br>Poste : ' + posteObj.label + '<br>Durée : ' + E.heuresA + ' h/semaine (' + A.hMens.toFixed(2) + ' h/mois) · Taux : ' + eur(E.tauxH) + '/h</div>' +
+    '</div>' +
+    '<table><tr><th>Rubrique</th><th class="n">Montant</th></tr>' + rows + '</table>' +
+    '<div class="pz-sign"><div>Signature employeur</div><div>Signature salarié</div></div>' +
+    '<div class="pz-foot">Document indicatif généré par le calculateur interne Cocottes Gourmandes — barèmes 2026 (SMIC 12,31 €/h, RGDU SMIC gelé 12,02 €, PMSS 4 005 €, grille avenant n°72). Ne remplace pas le bulletin de paie officiel établi par le cabinet Impulsa Conseil. Non-cadre, moins de 11 salariés, hors versement mobilité.</div>';
+  window.print();
+}
+$("btnPdf").onclick = bulletinPDF;
+
+rendre();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
+</script>
+</body>
+</html>
