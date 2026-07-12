@@ -86,6 +86,22 @@
     #printZone .pz-sign { display:flex; gap:30px; margin-top:24px; }
     #printZone .pz-sign div { flex:1; border-top:1px solid #999; padding-top:4px; font-size:10px; color:#555; }
   }
+  .tabs { display:flex; gap:4px; max-width:680px; margin:0 auto; padding:14px 16px 0; }
+  .tab { flex:1; text-align:center; padding:12px 8px; font-size:13px; font-weight:600; color:var(--gris); background:#f9fafb; border:1px solid var(--bord); border-bottom:none; border-radius:10px 10px 0 0; cursor:pointer; }
+  .tab.on { color:var(--vert); background:#fff; box-shadow:inset 0 -3px 0 var(--orange); }
+  .eqline { display:flex; gap:8px; align-items:flex-end; padding:9px 0; border-bottom:1px solid #f3f4f6; }
+  .eqline > div { display:flex; flex-direction:column; }
+  .eqline select { min-width:0; }
+  .eqline .num { width:66px; }
+  .eqcost { font-weight:600; font-variant-numeric:tabular-nums; color:var(--vert); font-size:14px; padding:9px 4px 10px; min-width:92px; text-align:right; }
+  .eqdel { font:inherit; border:none; background:none; color:var(--brique); cursor:pointer; font-size:17px; padding:0 2px 12px; }
+  .btn-add { font:inherit; font-weight:600; padding:9px 14px; margin-top:12px; border:1px dashed var(--orange); border-radius:10px; background:#fff; color:var(--orange); cursor:pointer; min-height:44px; }
+  .btn-add:active { background:#fff7f2; }
+  .mtab { width:100%; border-collapse:collapse; margin:16px 0 6px; font-variant-numeric:tabular-nums; }
+  .mtab th, .mtab td { padding:10px 8px; text-align:right; font-size:14px; border-bottom:1px solid #f3f4f6; }
+  .mtab th:first-child, .mtab td:first-child { text-align:left; }
+  .mtab thead th { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--gris); border-bottom:1.5px solid var(--vert); }
+  .mtab tr.tot td { font-weight:700; color:var(--vert); border-top:1.5px solid var(--vert); font-size:15px; }
 </style>
 </head>
 <body>
@@ -95,7 +111,12 @@
   <h1>Calculateur de salaire IDCC 1501</h1>
   <p>Barèmes 2026 vérifiés · SMIC 12,31 €/h (RGDU gelé 12,02 €) · Navigo 90,80 € · Grille avenant n°72 · Estimation indicative</p>
 </header>
+<nav class="tabs">
+  <div class="tab on" data-tab="salaire">Salaire d'un poste</div>
+  <div class="tab" data-tab="equipe">Masse salariale équipe</div>
+</nav>
 <main>
+<div id="panel-salaire">
   <label class="txt" for="poste">Poste — grille conventionnelle</label>
   <select id="poste"></select>
   <p class="note-i" id="noteSmic" hidden></p>
@@ -155,6 +176,34 @@
       <p style="margin-top:12px"><button id="reset" style="font:inherit;padding:8px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer">↩︎ Réinitialiser les valeurs par défaut</button></p>
     </div>
   </details>
+</div>
+
+<div id="panel-equipe" hidden>
+  <p class="note-i">Compose ton équipe : choisis le poste (niveau &amp; échelon), les heures hebdo et le nombre de personnes. La masse salariale est ventilée <b>brut + charges patronales</b> (réduction générale RGDU 2026 déduite), sur la semaine, le mois et l'année.</p>
+
+  <div class="rang" style="margin:12px 0 6px">
+    <label class="check"><input type="checkbox" id="eqRepas" checked> Repas fourni</label>
+    <label class="check"><input type="checkbox" id="eqNavigo" checked> Navigo 50 %</label>
+  </div>
+
+  <div class="entetes" style="padding-bottom:6px"><span style="flex:1">Poste · heures · effectif</span><span style="min-width:92px;text-align:right">Coût / mois</span></div>
+  <div id="eqlist"></div>
+  <button class="btn-add" id="eqAdd" type="button">+ Ajouter un poste</button>
+
+  <div class="cles" style="margin-top:22px"><div class="fil"></div>
+    <div class="grid">
+      <div class="cell"><div class="lib">Effectif total</div><div class="val v1" id="eqEff"></div><div class="sub" id="eqHeures"></div></div>
+      <div class="cell"><div class="lib">Masse salariale / an</div><div class="val v2" id="eqAn"></div><div class="sub" id="eqAnSub"></div></div>
+    </div>
+  </div>
+
+  <h2>Ventilation brut + charges</h2>
+  <table class="mtab">
+    <thead><tr><th>Période</th><th>Brut</th><th>Charges patron.</th><th>Total</th></tr></thead>
+    <tbody id="eqBody"></tbody>
+  </table>
+  <p class="src">Brut = brut soumis à cotisations (salaire + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo. Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
+</div>
 </main>
 <div id="printZone"></div>
 <footer>Estimation indicative — non-cadre, moins de 11 salariés, hors versement mobilité. RGDU 2026 : dégressive jusqu'à 3 SMIC, SMIC gelé 12,02 €. Navigo : 50 % obligatoire, exonéré et non imposable (prorata sous 17,5 h/sem). Mutuelle Alan : part employeur hors forfait social. Bulletin officiel : Impulsa.</footer>
@@ -410,6 +459,74 @@ function bulletinPDF() {
   window.print();
 }
 $("btnPdf").onclick = bulletinPDF;
+
+// ============ ONGLET MASSE SALARIALE ÉQUIPE ============
+let equipe = [];
+try { const t = JSON.parse(localStorage.getItem("paie-equipe") || "null"); if (Array.isArray(t) && t.length) equipe = t; } catch (e) {}
+if (!equipe.length) equipe = [{ poste: "I-A", heures: 35, nb: 2 }, { poste: "III-A", heures: 35, nb: 1 }];
+const EQ = { repas: true, navigo: true };
+function sauverEquipe() { try { localStorage.setItem("paie-equipe", JSON.stringify(equipe)); } catch (e) {} }
+
+function coutLigne(l) {
+  const taux = Math.max(grille.find(g => g.id === l.poste)?.taux || 0, P.smicH);
+  const joursMois = Math.max(1, Math.round(21 * Math.min(1, (l.heures || 0) / 35)));
+  const c = calculer({ tauxH: taux, heures: l.heures || 0, joursMois, avecRepas: EQ.repas, avecNavigo: EQ.navigo, tauxPAS: 0, primeMens: 0 });
+  return { brut: c.brutSoumis, charges: c.coutEmployeur - c.brutSoumis, total: c.coutEmployeur };
+}
+
+function rendreEquipe() {
+  const host = $("eqlist"); host.innerHTML = "";
+  let brutM = 0, chargeM = 0, effectif = 0, heuresTot = 0;
+
+  equipe.forEach((l, idx) => {
+    const c = coutLigne(l);
+    const nb = l.nb || 0;
+    brutM += c.brut * nb; chargeM += c.charges * nb; effectif += nb; heuresTot += (l.heures || 0) * nb;
+
+    const row = document.createElement("div"); row.className = "eqline";
+    const opts = grille.map(g => '<option value="' + g.id + '"' + (g.id === l.poste ? " selected" : "") + '>' + g.label + "</option>").join("");
+    row.innerHTML =
+      '<div style="flex:1"><label class="txt">Poste</label><select>' + opts + '</select></div>' +
+      '<div><label class="txt">H/sem</label><input type="number" class="num" step="0.5" min="1" value="' + l.heures + '"></div>' +
+      '<div><label class="txt">Nb</label><input type="number" class="num" step="1" min="0" value="' + l.nb + '"></div>' +
+      '<div class="eqcost" title="' + nb + ' × ' + eur(c.total) + '">' + eur(c.total * nb) + '</div>' +
+      '<button class="eqdel" type="button" title="Supprimer">✕</button>';
+    const sel = row.querySelector("select");
+    const [inpH, inpN] = row.querySelectorAll("input");
+    sel.onchange = () => { l.poste = sel.value; sauverEquipe(); rendreEquipe(); };
+    inpH.oninput = () => { l.heures = parseFloat(inpH.value) || 0; sauverEquipe(); rendreEquipe(); };
+    inpN.oninput = () => { l.nb = parseInt(inpN.value, 10) || 0; sauverEquipe(); rendreEquipe(); };
+    row.querySelector(".eqdel").onclick = () => { equipe.splice(idx, 1); if (!equipe.length) equipe.push({ poste: "I-A", heures: 35, nb: 1 }); sauverEquipe(); rendreEquipe(); };
+    host.appendChild(row);
+  });
+
+  const totM = brutM + chargeM;
+  const wk = x => x * 12 / 52;
+  const rowMasse = (lib, b, ch, cls) => '<tr class="' + (cls || "") + '"><td>' + lib + '</td><td>' + eur(b) + '</td><td>' + eur(ch) + '</td><td>' + eur(b + ch) + '</td></tr>';
+  $("eqBody").innerHTML =
+    rowMasse("Semaine", wk(brutM), wk(chargeM)) +
+    rowMasse("Mois", brutM, chargeM) +
+    rowMasse("Année (×12)", brutM * 12, chargeM * 12, "tot");
+
+  $("eqEff").textContent = effectif + (effectif > 1 ? " pers." : " pers.");
+  $("eqHeures").textContent = heuresTot.toLocaleString("fr-FR", { maximumFractionDigits: 1 }) + " h/sem cumulées";
+  $("eqAn").textContent = eur(totM * 12, 0);
+  $("eqAnSub").textContent = eur(totM, 0) + " /mois · brut " + eur(brutM * 12, 0) + " + charges " + eur(chargeM * 12, 0);
+}
+
+$("eqRepas").onchange = () => { EQ.repas = $("eqRepas").checked; rendreEquipe(); };
+$("eqNavigo").onchange = () => { EQ.navigo = $("eqNavigo").checked; rendreEquipe(); };
+$("eqAdd").onclick = () => { equipe.push({ poste: "I-A", heures: 35, nb: 1 }); sauverEquipe(); rendreEquipe(); };
+
+document.querySelectorAll(".tab").forEach(t => {
+  t.onclick = () => {
+    const name = t.dataset.tab;
+    document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === t));
+    $("panel-salaire").hidden = name !== "salaire";
+    $("panel-equipe").hidden = name !== "equipe";
+    if (name === "equipe") rendreEquipe();
+  };
+});
 
 rendre();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
