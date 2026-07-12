@@ -89,11 +89,13 @@
   .tabs { display:flex; gap:4px; max-width:680px; margin:0 auto; padding:14px 16px 0; }
   .tab { flex:1; text-align:center; padding:12px 8px; font-size:13px; font-weight:600; color:var(--gris); background:#f9fafb; border:1px solid var(--bord); border-bottom:none; border-radius:10px 10px 0 0; cursor:pointer; }
   .tab.on { color:var(--vert); background:#fff; box-shadow:inset 0 -3px 0 var(--orange); }
-  .eqline { display:flex; gap:8px; align-items:flex-end; padding:9px 0; border-bottom:1px solid #f3f4f6; }
+  .eqline { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; padding:9px 0; border-bottom:1px solid #f3f4f6; }
   .eqline > div { display:flex; flex-direction:column; }
+  .eqline .eqposte { flex:1; }
   .eqline select { min-width:0; }
-  .eqline .num { width:66px; }
-  .eqcost { font-weight:600; font-variant-numeric:tabular-nums; color:var(--vert); font-size:14px; padding:9px 4px 10px; min-width:92px; text-align:right; }
+  @media (max-width:480px){ .eqline .eqposte { flex-basis:100%; } .eqline .eqcost { margin-left:auto; } }
+  .eqline .num { width:52px; }
+  .eqcost { font-weight:600; font-variant-numeric:tabular-nums; color:var(--vert); font-size:13.5px; padding:9px 2px 10px; min-width:78px; text-align:right; }
   .eqdel { font:inherit; border:none; background:none; color:var(--brique); cursor:pointer; font-size:17px; padding:0 2px 12px; }
   .btn-add { font:inherit; font-weight:600; padding:9px 14px; margin-top:12px; border:1px dashed var(--orange); border-radius:10px; background:#fff; color:var(--orange); cursor:pointer; min-height:44px; }
   .btn-add:active { background:#fff7f2; }
@@ -203,7 +205,7 @@
     <div><label class="txt">CA mensuel HT (€)</label><input type="number" id="eqCA" step="500" min="0" placeholder="ex. 45000" style="width:120px"></div>
   </div>
 
-  <div class="entetes" style="padding-bottom:6px"><span style="flex:1">Poste · heures · effectif</span><span style="min-width:92px;text-align:right">Coût / mois</span></div>
+  <div class="entetes" style="padding-bottom:6px"><span style="flex:1">Poste · h/sem · HS · effectif</span><span style="min-width:78px;text-align:right">Coût / mois</span></div>
   <div id="eqlist"></div>
   <button class="btn-add" id="eqAdd" type="button">+ Ajouter un poste</button>
 
@@ -224,7 +226,7 @@
     <thead><tr><th>Période</th><th>Brut</th><th>Charges patron.</th><th>Total</th></tr></thead>
     <tbody id="eqBody"></tbody>
   </table>
-  <p class="src">Brut = brut soumis à cotisations (salaire + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo. Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
+  <p class="src">Brut = brut soumis à cotisations (salaire + heures supp. majorées + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo, moins la déduction forfaitaire sur heures supp. Colonne <b>HS</b> = heures supplémentaires hebdomadaires par personne (+25 % jusqu'à 8 h, +50 % au-delà). Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
 </div>
 </main>
 <div id="printZone"></div>
@@ -514,7 +516,7 @@ function sauverEquipe() { try { localStorage.setItem("paie-equipe", JSON.stringi
 function coutLigne(l) {
   const taux = Math.max(grille.find(g => g.id === l.poste)?.taux || 0, P.smicH);
   const joursMois = Math.max(1, Math.round(21 * Math.min(1, (l.heures || 0) / 35)));
-  const c = calculer({ tauxH: taux, heures: l.heures || 0, joursMois, avecRepas: EQ.repas, avecNavigo: EQ.navigo, tauxPAS: 0, primeMens: 0 });
+  const c = calculer({ tauxH: taux, heures: l.heures || 0, heuresSup: l.hs || 0, joursMois, avecRepas: EQ.repas, avecNavigo: EQ.navigo, tauxPAS: 0, primeMens: 0 });
   return { brut: c.brutSoumis, charges: c.coutEmployeur - c.brutSoumis, total: c.coutEmployeur };
 }
 
@@ -530,15 +532,17 @@ function rendreEquipe() {
     const row = document.createElement("div"); row.className = "eqline";
     const opts = grille.map(g => '<option value="' + g.id + '"' + (g.id === l.poste ? " selected" : "") + '>' + g.label + "</option>").join("");
     row.innerHTML =
-      '<div style="flex:1"><label class="txt">Poste</label><select>' + opts + '</select></div>' +
+      '<div class="eqposte"><label class="txt">Poste</label><select>' + opts + '</select></div>' +
       '<div><label class="txt">H/sem</label><input type="number" class="num" step="0.5" min="1" value="' + l.heures + '"></div>' +
+      '<div><label class="txt">HS</label><input type="number" class="num" step="0.5" min="0" value="' + (l.hs || 0) + '"></div>' +
       '<div><label class="txt">Nb</label><input type="number" class="num" step="1" min="0" value="' + l.nb + '"></div>' +
       '<div class="eqcost" title="' + nb + ' × ' + eur(c.total) + '">' + eur(c.total * nb) + '</div>' +
       '<button class="eqdel" type="button" title="Supprimer">✕</button>';
     const sel = row.querySelector("select");
-    const [inpH, inpN] = row.querySelectorAll("input");
+    const [inpH, inpHS, inpN] = row.querySelectorAll("input");
     sel.onchange = () => { l.poste = sel.value; sauverEquipe(); rendreEquipe(); };
     inpH.oninput = () => { l.heures = parseFloat(inpH.value) || 0; sauverEquipe(); rendreEquipe(); };
+    inpHS.oninput = () => { l.hs = parseFloat(inpHS.value) || 0; sauverEquipe(); rendreEquipe(); };
     inpN.oninput = () => { l.nb = parseInt(inpN.value, 10) || 0; sauverEquipe(); rendreEquipe(); };
     row.querySelector(".eqdel").onclick = () => { equipe.splice(idx, 1); if (!equipe.length) equipe.push({ poste: "I-A", heures: 35, nb: 1 }); sauverEquipe(); rendreEquipe(); };
     host.appendChild(row);
