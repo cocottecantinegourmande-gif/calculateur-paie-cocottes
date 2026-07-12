@@ -94,7 +94,7 @@
   .eqline .eqposte { flex:1; }
   .eqline select { min-width:0; }
   @media (max-width:480px){ .eqline .eqposte { flex-basis:100%; } .eqline .eqcost { margin-left:auto; } }
-  .eqline .num { width:52px; }
+  .eqline .num { width:64px; }
   .eqcost { font-weight:600; font-variant-numeric:tabular-nums; color:var(--vert); font-size:13.5px; padding:9px 2px 10px; min-width:78px; text-align:right; }
   .eqdel { font:inherit; border:none; background:none; color:var(--brique); cursor:pointer; font-size:17px; padding:0 2px 12px; }
   .btn-add { font:inherit; font-weight:600; padding:9px 14px; margin-top:12px; border:1px dashed var(--orange); border-radius:10px; background:#fff; color:var(--orange); cursor:pointer; min-height:44px; }
@@ -133,6 +133,7 @@
     <div><label class="txt">Taux horaire brut</label><input type="number" id="tauxH" step="0.01" min="0"> €/h</div>
     <div><label class="txt">Heures / semaine</label><input type="number" id="heuresA" step="0.5" min="1" style="width:90px"></div>
   </div>
+  <p class="note-i" id="noteHS" hidden></p>
 
   <div id="conformite"></div>
 
@@ -154,7 +155,6 @@
         <div><label class="txt">Jours / mois</label><input type="number" id="joursMois" step="1" min="1" style="width:70px"></div>
         <div><label class="txt">Prime mens.</label><input type="number" id="primeMens" step="10" min="0" style="width:90px"></div>
         <div><label class="txt">PAS %</label><input type="number" id="tauxPAS" step="0.1" min="0" style="width:70px"></div>
-        <div><label class="txt">H. supp./sem</label><input type="number" id="heuresSup" step="0.5" min="0" style="width:80px"></div>
       </div>
       <div class="rang">
         <label class="check"><input type="checkbox" id="comparer"> Comparer avec</label>
@@ -205,7 +205,7 @@
     <div><label class="txt">CA mensuel HT (€)</label><input type="number" id="eqCA" step="500" min="0" placeholder="ex. 45000" style="width:120px"></div>
   </div>
 
-  <div class="entetes" style="padding-bottom:6px"><span style="flex:1">Poste · h/sem · HS · effectif</span><span style="min-width:78px;text-align:right">Coût / mois</span></div>
+  <div class="entetes" style="padding-bottom:6px"><span style="flex:1">Poste · h/sem · effectif</span><span style="min-width:78px;text-align:right">Coût / mois</span></div>
   <div id="eqlist"></div>
   <button class="btn-add" id="eqAdd" type="button">+ Ajouter un poste</button>
 
@@ -226,7 +226,7 @@
     <thead><tr><th>Période</th><th>Brut</th><th>Charges patron.</th><th>Total</th></tr></thead>
     <tbody id="eqBody"></tbody>
   </table>
-  <p class="src">Brut = brut soumis à cotisations (salaire + heures supp. majorées + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo, moins la déduction forfaitaire sur heures supp. Colonne <b>HS</b> = heures supplémentaires hebdomadaires par personne (+25 % jusqu'à 8 h, +50 % au-delà). Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
+  <p class="src">Toute durée saisie <b>au-delà de 35 h/sem</b> est automatiquement comptée en heures supplémentaires (+25 % jusqu'à 43 h, +50 % au-delà) — signalées par un badge « +n HS ». Brut = brut soumis à cotisations (salaire + heures supp. majorées + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo, moins la déduction forfaitaire sur heures supp. Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
 </div>
 </main>
 <div id="printZone"></div>
@@ -276,11 +276,12 @@ const eur = (n, dec) => (n == null || isNaN(n)) ? "—" :
 // ============ MOTEUR 2026 ============
 function calculer(o) {
   const hMens = o.heures * 52 / 12;
-  const sup = o.heuresSup || 0;
+  const hMensBase = Math.min(o.heures, 35) * 52 / 12;
+  const sup = Math.max(0, o.heures - 35) + (o.heuresSup || 0);
   const sup25 = Math.min(sup, 8), sup50 = Math.max(0, sup - 8);
   const hsMensBrut = o.tauxH * (sup25 * 1.25 + sup50 * 1.5) * 52 / 12;
   const nbHSmois = sup * 52 / 12;
-  const brutBase = o.tauxH * hMens + hsMensBrut + (o.primeMens || 0);
+  const brutBase = o.tauxH * hMensBase + hsMensBrut + (o.primeMens || 0);
   const avNature = o.avecRepas ? P.repasValeur * o.joursMois : 0;
   const brutSoumis = brutBase + avNature;
   const plafond = Math.min(brutSoumis, P.pmss);
@@ -309,7 +310,7 @@ function calculer(o) {
   }
   const reduction = brutSoumis * coef;
   const coutEmployeur = brutSoumis + cotP - reduction + alanPat + navigoRemb - deducPatHS;
-  return { hMens, brutBase, hsMensBrut, redSalHS, deducPatHS, avNature, brutSoumis, cotS, netAvantImpot, pas, netApresImpot, cotP, coef, reduction, coutEmployeur, alanSal, alanPat, navigoRemb };
+  return { hMens, hMensBase, sup, brutBase, hsMensBrut, redSalHS, deducPatHS, avNature, brutSoumis, cotS, netAvantImpot, pas, netApresImpot, cotP, coef, reduction, coutEmployeur, alanSal, alanPat, navigoRemb };
 }
 
 // ============ ÉTAT UI ============
@@ -349,6 +350,10 @@ function rendre() {
     ? '<div class="alerte">⚠️ ' + sousSeuil.length + ' échelon' + (sousSeuil.length > 1 ? 's' : '') + ' de la grille sous le SMIC (' + eur(P.smicH) + '/h), rattrapé' + (sousSeuil.length > 1 ? 's' : '') + ' automatiquement au SMIC. Après une revalorisation du SMIC, pense à mettre à jour la grille (section « Paramètres »).</div>'
     : '';
 
+  const supA = Math.max(0, E.heuresA - 35);
+  $("noteHS").hidden = supA <= 0;
+  if (supA > 0) $("noteHS").textContent = "⏱️ " + E.heuresA.toLocaleString("fr-FR") + " h/sem = 35 h de base + " + supA.toLocaleString("fr-FR") + " h supp. (" + (supA <= 8 ? "+25 %" : "+25 % puis +50 %") + "), ajoutées automatiquement.";
+
   $("repasLbl").textContent = P.repasValeur.toLocaleString("fr-FR");
   $("navigoLbl").textContent = (P.navigo*P.navigoPct/100).toLocaleString("fr-FR",{minimumFractionDigits:2});
   $("vsWrap").style.display = E.comparer ? "" : "none";
@@ -367,12 +372,12 @@ function rendre() {
   $("colA").textContent = E.heuresA + " h/sem";
   $("colB").textContent = E.comparer ? E.heuresB + " h/sem" : "";
 
-  let h = ligne("Salaire de base (" + A.hMens.toFixed(2) + " h" + (E.comparer ? " / " + B.hMens.toFixed(2) + " h" : "") + ")", A.brutBase - A.hsMensBrut, B.brutBase - B.hsMensBrut);
-  if (E.heuresSup > 0) h += ligne("Heures supp. (" + E.heuresSup + " h/sem, +25/50 %)", A.hsMensBrut, B.hsMensBrut);
+  let h = ligne("Salaire de base (" + A.hMensBase.toFixed(2) + " h" + (E.comparer ? " / " + B.hMensBase.toFixed(2) + " h" : "") + ")", A.brutBase - A.hsMensBrut, B.brutBase - B.hsMensBrut);
+  if (A.sup > 0) h += ligne("Heures supp. (" + A.sup.toLocaleString("fr-FR") + " h/sem, " + (A.sup > 8 ? "+25/50 %" : "+25 %") + ")", A.hsMensBrut, B.hsMensBrut);
   if (E.avecRepas) h += ligne("Avantage nature repas", A.avNature, B.avNature);
   h += ligne("Brut soumis à cotisations", A.brutSoumis, B.brutSoumis, "fort");
   h += ligne("Cotisations salariales", -A.cotS, -B.cotS, "neg");
-  if (E.heuresSup > 0) h += ligne("Réduction cotisations HS (" + P.hsRedSalPct + " %)", A.redSalHS, B.redSalHS);
+  if (A.sup > 0) h += ligne("Réduction cotisations HS (" + P.hsRedSalPct + " %)", A.redSalHS, B.redSalHS);
   if (A.alanSal > 0.005) h += ligne("Mutuelle Alan part salariale (" + (100-P.alanEmpPct) + " %)", -A.alanSal, -B.alanSal, "neg");
   if (E.avecNavigo) h += ligne("Remboursement Navigo (" + P.navigoPct + " %, exonéré)", A.navigoRemb, B.navigoRemb);
   h += ligne("Net avant impôt (versé)", A.netAvantImpot, B.netAvantImpot, "fort");
@@ -384,7 +389,7 @@ function rendre() {
 
   let e = ligne("Cotisations patronales brutes", A.cotP, B.cotP);
   e += ligne("RGDU 2026 (coef " + (A.coef*100).toFixed(2) + " % / " + (B.coef*100).toFixed(2) + " %)", -A.reduction, -B.reduction);
-  if (E.heuresSup > 0) e += ligne("Déduction forfaitaire HS (" + eur(P.hsDeducPat) + "/h)", -A.deducPatHS, -B.deducPatHS, "neg");
+  if (A.sup > 0) e += ligne("Déduction forfaitaire HS (" + eur(P.hsDeducPat) + "/h)", -A.deducPatHS, -B.deducPatHS, "neg");
   e += ligne("Mutuelle Alan part employeur (" + P.alanEmpPct + " %)", A.alanPat, B.alanPat);
   if (E.avecNavigo) e += ligne("Remboursement Navigo", A.navigoRemb, B.navigoRemb);
   e += ligne("Coût employeur mensuel", A.coutEmployeur, B.coutEmployeur, "fort");
@@ -440,7 +445,7 @@ function lier(id, cle, type) {
   else { el.value = E[cle]; el.oninput = () => { E[cle] = parseFloat(el.value) || 0; rendre(); }; }
 }
 lier("tauxH","tauxH"); lier("heuresA","heuresA"); lier("heuresB","heuresB");
-lier("joursMois","joursMois"); lier("primeMens","primeMens"); lier("tauxPAS","tauxPAS"); lier("heuresSup","heuresSup");
+lier("joursMois","joursMois"); lier("primeMens","primeMens"); lier("tauxPAS","tauxPAS");
 lier("comparer","comparer","check"); lier("avecRepas","avecRepas","check"); lier("avecNavigo","avecNavigo","check");
 $("poste").onchange = (ev) => {
   E.poste = ev.target.value;
@@ -465,13 +470,13 @@ function bulletinPDF() {
   const dte = new Date().toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
   const tr = (lib, v, cls) => '<tr class="'+(cls||"")+'"><td>'+lib+'</td><td class="n">'+eur(v)+'</td></tr>';
   let rows = "";
-  rows += tr("Salaire de base ("+A.hMens.toFixed(2)+" h × "+eur(E.tauxH)+")", E.tauxH*A.hMens);
-  if (E.heuresSup > 0) rows += tr("Heures supplémentaires ("+E.heuresSup+" h/sem, +25/50 %)", A.hsMensBrut);
+  rows += tr("Salaire de base ("+A.hMensBase.toFixed(2)+" h × "+eur(E.tauxH)+")", E.tauxH*A.hMensBase);
+  if (A.sup > 0) rows += tr("Heures supplémentaires ("+A.sup.toLocaleString("fr-FR")+" h/sem, "+(A.sup>8?"+25/50 %":"+25 %")+")", A.hsMensBrut);
   if (E.primeMens > 0) rows += tr("Prime mensuelle", E.primeMens);
   if (E.avecRepas) rows += tr("Avantage en nature repas ("+E.joursMois+" j × "+eur(P.repasValeur)+")", A.avNature);
   rows += tr("Brut soumis à cotisations", A.brutSoumis, "fort");
   rows += tr("Cotisations salariales (vieillesse, retraite compl., CSG/CRDS)", -A.cotS, "neg");
-  if (E.heuresSup > 0) rows += tr("Réduction cotisations salariales HS", A.redSalHS);
+  if (A.sup > 0) rows += tr("Réduction cotisations salariales HS", A.redSalHS);
   if (A.alanSal > 0.005) rows += tr("Mutuelle Alan — part salariale", -A.alanSal, "neg");
   if (E.avecRepas) rows += tr("Reprise avantage en nature", -A.avNature, "neg");
   if (E.avecNavigo) rows += tr("Remboursement Navigo ("+P.navigoPct+" % — exonéré)", A.navigoRemb);
@@ -483,7 +488,7 @@ function bulletinPDF() {
   rows += '<tr class="sect"><td>Coût employeur</td><td></td></tr>';
   rows += tr("Cotisations patronales (taux pleins 2026)", A.cotP);
   rows += tr("Réduction générale RGDU 2026 (coef "+(A.coef*100).toFixed(2)+" %)", -A.reduction);
-  if (E.heuresSup > 0) rows += tr("Déduction forfaitaire patronale HS ("+eur(P.hsDeducPat)+"/h)", -A.deducPatHS);
+  if (A.sup > 0) rows += tr("Déduction forfaitaire patronale HS ("+eur(P.hsDeducPat)+"/h)", -A.deducPatHS);
   rows += tr("Mutuelle Alan — part employeur ("+P.alanEmpPct+" %)", A.alanPat);
   if (E.avecNavigo) rows += tr("Remboursement Navigo", A.navigoRemb);
   rows += tr("Coût total employeur mensuel", A.coutEmployeur, "fort");
@@ -516,8 +521,8 @@ function sauverEquipe() { try { localStorage.setItem("paie-equipe", JSON.stringi
 function coutLigne(l) {
   const taux = Math.max(grille.find(g => g.id === l.poste)?.taux || 0, P.smicH);
   const joursMois = Math.max(1, Math.round(21 * Math.min(1, (l.heures || 0) / 35)));
-  const c = calculer({ tauxH: taux, heures: l.heures || 0, heuresSup: l.hs || 0, joursMois, avecRepas: EQ.repas, avecNavigo: EQ.navigo, tauxPAS: 0, primeMens: 0 });
-  return { brut: c.brutSoumis, charges: c.coutEmployeur - c.brutSoumis, total: c.coutEmployeur };
+  const c = calculer({ tauxH: taux, heures: l.heures || 0, joursMois, avecRepas: EQ.repas, avecNavigo: EQ.navigo, tauxPAS: 0, primeMens: 0 });
+  return { brut: c.brutSoumis, charges: c.coutEmployeur - c.brutSoumis, total: c.coutEmployeur, sup: c.sup };
 }
 
 function rendreEquipe() {
@@ -531,18 +536,17 @@ function rendreEquipe() {
 
     const row = document.createElement("div"); row.className = "eqline";
     const opts = grille.map(g => '<option value="' + g.id + '"' + (g.id === l.poste ? " selected" : "") + '>' + g.label + "</option>").join("");
+    const hsTag = c.sup > 0 ? ' <span style="color:var(--orange);font-weight:600">+' + c.sup.toLocaleString("fr-FR") + ' HS</span>' : '';
     row.innerHTML =
       '<div class="eqposte"><label class="txt">Poste</label><select>' + opts + '</select></div>' +
-      '<div><label class="txt">H/sem</label><input type="number" class="num" step="0.5" min="1" value="' + l.heures + '"></div>' +
-      '<div><label class="txt">HS</label><input type="number" class="num" step="0.5" min="0" value="' + (l.hs || 0) + '"></div>' +
+      '<div><label class="txt">H/sem' + hsTag + '</label><input type="number" class="num" step="0.5" min="1" value="' + l.heures + '"></div>' +
       '<div><label class="txt">Nb</label><input type="number" class="num" step="1" min="0" value="' + l.nb + '"></div>' +
       '<div class="eqcost" title="' + nb + ' × ' + eur(c.total) + '">' + eur(c.total * nb) + '</div>' +
       '<button class="eqdel" type="button" title="Supprimer">✕</button>';
     const sel = row.querySelector("select");
-    const [inpH, inpHS, inpN] = row.querySelectorAll("input");
+    const [inpH, inpN] = row.querySelectorAll("input");
     sel.onchange = () => { l.poste = sel.value; sauverEquipe(); rendreEquipe(); };
     inpH.oninput = () => { l.heures = parseFloat(inpH.value) || 0; sauverEquipe(); rendreEquipe(); };
-    inpHS.oninput = () => { l.hs = parseFloat(inpHS.value) || 0; sauverEquipe(); rendreEquipe(); };
     inpN.oninput = () => { l.nb = parseInt(inpN.value, 10) || 0; sauverEquipe(); rendreEquipe(); };
     row.querySelector(".eqdel").onclick = () => { equipe.splice(idx, 1); if (!equipe.length) equipe.push({ poste: "I-A", heures: 35, nb: 1 }); sauverEquipe(); rendreEquipe(); };
     host.appendChild(row);

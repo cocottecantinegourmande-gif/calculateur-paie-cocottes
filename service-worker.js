@@ -1,6 +1,6 @@
 // Service worker — Paie Cocottes.
 // HTML en network-first (toujours la dernière version en ligne), reste en cache-first. Marche hors ligne.
-const CACHE = "paie-cocottes-v4";
+const CACHE = "paie-cocottes-v5";
 const FICHIERS = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FICHIERS)).then(() => self.skipWaiting()));
