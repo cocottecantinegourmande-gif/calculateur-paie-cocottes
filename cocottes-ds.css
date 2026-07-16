@@ -1,0 +1,249 @@
+/* ============================================================================
+   COCOTTES — DESIGN SYSTEM  ·  v1.0  ·  "Ardoise & Marché"
+   ----------------------------------------------------------------------------
+   Identité éditoriale partagée de l'écosystème d'apps Cocottes Gourmandes.
+   Un langage : ardoise de marché parisien × magazine de cuisine.
+   Émeraude ancre · orange clémentine accent · crème papier · Young Serif.
+
+   USAGE  — chaque app (single-file HTML ou build) charge d'abord ce fichier :
+     <link rel="preconnect" href="https://fonts.googleapis.com">
+     <link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Outfit:wght@400;500;600;700;800&family=Lora:ital@1&display=swap" rel="stylesheet">
+     <link rel="stylesheet" href="cocottes-ds.css">
+   Puis les styles propres à l'app consomment les tokens --cg-*.
+
+   Canonique : cocottes-dashboard/cocottes-ds.css — copier tel quel dans les
+   autres repos lors du déploiement (pas de build partagé).
+   ========================================================================== */
+
+:root{
+  /* — Couleurs de marque — */
+  --cg-foret:#36543F;      --cg-foret-d:#243A2C;   --cg-foret-l:#4E7059;
+  --cg-orange:#F26A2E;     --cg-orange-d:#D2521B;   --cg-orange-l:#F7935F;
+  --cg-brique:#90321F;     --cg-or:#C98A2B;         --cg-or-d:#A56E18;
+
+  /* — Papier & encre (surfaces chaudes, superposées) — */
+  --cg-paper:#FAF6EE;      /* fond de page          */
+  --cg-paper-2:#F2EADB;    /* creux / zones enfoncées */
+  --cg-card:#FFFDFA;       /* cartes (crème très clair) */
+  --cg-creme:#F8F2E7;
+  --cg-ink:#241F1A;        /* texte principal       */
+  --cg-ink-soft:#6C6153;   /* texte secondaire      */
+  --cg-ink-faint:#9C9184;
+  --cg-line:#E7DCC9;       /* filets / bordures     */
+  --cg-line-strong:#D8CAB2;
+
+  /* — Rôles sémantiques — */
+  --cg-accent:var(--cg-orange);
+  --cg-ok:var(--cg-foret);
+  --cg-warn:var(--cg-or);
+  --cg-danger:var(--cg-brique);
+
+  /* — Typographie — */
+  --cg-display:'Young Serif',Georgia,'Times New Roman',serif;
+  --cg-sans:'Outfit','Segoe UI',system-ui,-apple-system,sans-serif;
+  --cg-hand:'Lora',Georgia,serif;             /* italique, grâce "plat du jour" */
+
+  --cg-t-xs:11px; --cg-t-sm:12.5px; --cg-t-base:14.5px; --cg-t-md:16px;
+  --cg-t-lg:20px; --cg-t-xl:26px; --cg-t-2xl:34px; --cg-t-3xl:46px;
+
+  /* — Rayons — */
+  --cg-r-sm:10px; --cg-r-md:14px; --cg-r-lg:18px; --cg-r-xl:24px; --cg-r-pill:999px;
+
+  /* — Ombres chaudes superposées (jamais grises) — */
+  --cg-sh-1:0 1px 2px rgba(58,40,18,.06), 0 1px 1px rgba(58,40,18,.04);
+  --cg-sh-2:0 2px 4px rgba(58,40,18,.05), 0 10px 22px -10px rgba(58,40,18,.18);
+  --cg-sh-3:0 4px 8px rgba(58,40,18,.06), 0 22px 44px -16px rgba(58,40,18,.26);
+  --cg-sh-inset:inset 0 1px 0 rgba(255,255,255,.7);
+
+  /* — Mouvement — */
+  --cg-ease:cubic-bezier(.2,.7,.2,1);
+  --cg-ease-out:cubic-bezier(.16,1,.3,1);
+  --cg-dur:.32s;
+}
+
+/* ============================================================================
+   BASE
+   ========================================================================== */
+.cg-scope, .cg-body{
+  font-family:var(--cg-sans);
+  color:var(--cg-ink);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+.cg-body{
+  margin:0;
+  background:var(--cg-paper);
+  background-image:
+    radial-gradient(1200px 600px at 100% -10%, rgba(54,84,63,.05), transparent 60%),
+    radial-gradient(900px 500px at -10% 0%, rgba(242,106,46,.045), transparent 55%);
+}
+
+/* Grain papier — voile très léger, texture de vraie ardoise/papier kraft */
+.cg-grain::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+}
+
+/* ============================================================================
+   LOGOMARQUE  — le "point Cocottes" élevé (carré orange, ombre forêt)
+   ========================================================================== */
+.cg-mark{display:inline-flex;align-items:center;gap:.6em}
+.cg-mark-dot{
+  width:.85em;height:.85em;border-radius:4px;flex:none;
+  background:var(--cg-orange);
+  box-shadow:.34em 0 0 var(--cg-foret), .17em .17em 0 rgba(0,0,0,.05);
+}
+.cg-mark-name{
+  font-family:var(--cg-display);font-weight:400;letter-spacing:.2px;
+  line-height:1;color:var(--cg-foret);
+}
+
+/* ============================================================================
+   TYPOGRAPHIE
+   ========================================================================== */
+.cg-display{font-family:var(--cg-display);font-weight:400;line-height:1.04;letter-spacing:-.01em}
+.cg-hand{font-family:var(--cg-hand);font-style:italic}
+
+/* Suréclat éditorial : petit label filet + majuscules espacées */
+.cg-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--cg-foret-l);
+}
+.cg-eyebrow::before{
+  content:"";width:18px;height:2px;border-radius:2px;
+  background:linear-gradient(90deg,var(--cg-orange),transparent);
+}
+
+/* Soulignage "craie" sous un mot-clé */
+.cg-chalk{
+  background:linear-gradient(120deg,var(--cg-orange) 0%,var(--cg-or) 100%);
+  background-repeat:no-repeat;background-position:0 92%;background-size:100% .28em;
+  padding:0 .06em;
+}
+
+/* Chiffre à la une — Outfit en chiffres tabulaires (lisibilité data avant tout).
+   Règle : Young Serif pour les MOTS, jamais pour les chiffres denses. */
+.cg-figure{font-family:var(--cg-sans);font-weight:800;font-variant-numeric:tabular-nums lining-nums;
+  letter-spacing:-.02em;line-height:1;color:var(--cg-ink);font-feature-settings:"tnum" 1,"lnum" 1}
+.cg-figure-unit{font-family:var(--cg-sans);font-weight:600;font-size:.5em;color:var(--cg-ink-soft);margin-left:.15em;letter-spacing:0}
+/* Utilitaire chiffres : à appliquer sur toute valeur numérique */
+.cg-num{font-family:var(--cg-sans);font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum" 1,"lnum" 1}
+
+/* ============================================================================
+   CARTE  — surface papier avec ombre chaude, filet net, languette d'onglet
+   ========================================================================== */
+.cg-card{
+  position:relative;background:var(--cg-card);
+  border:1px solid var(--cg-line);border-radius:var(--cg-r-lg);
+  padding:16px;box-shadow:var(--cg-sh-1);
+}
+.cg-card--raised{box-shadow:var(--cg-sh-2)}
+.cg-card--tab{border-top:3px solid var(--cg-foret)}
+/* petite languette de ticket en haut à gauche */
+.cg-card--ticket::before{
+  content:"";position:absolute;top:-1px;left:18px;width:34px;height:5px;
+  border-radius:0 0 4px 4px;background:var(--cg-orange);
+}
+
+/* ============================================================================
+   BOUTONS
+   ========================================================================== */
+.cg-btn{
+  --_bg:var(--cg-foret);--_fg:#fff;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--cg-sans);font-weight:700;font-size:14px;letter-spacing:.01em;
+  padding:12px 18px;border:1px solid transparent;border-radius:var(--cg-r-md);
+  background:var(--_bg);color:var(--_fg);cursor:pointer;
+  box-shadow:var(--cg-sh-1),var(--cg-sh-inset);
+  transition:transform .12s var(--cg-ease), box-shadow var(--cg-dur) var(--cg-ease), filter .15s;
+}
+.cg-btn:hover{filter:brightness(1.04)}
+.cg-btn:active{transform:translateY(1px)}
+.cg-btn--accent{--_bg:var(--cg-orange)}
+.cg-btn--brique{--_bg:var(--cg-brique)}
+.cg-btn--ghost{--_bg:transparent;--_fg:var(--cg-foret);border-color:var(--cg-line-strong);box-shadow:none}
+.cg-btn--ghost:hover{background:var(--cg-creme)}
+.cg-btn--block{width:100%}
+
+/* ============================================================================
+   PUCES / SEGMENTS / TAGS
+   ========================================================================== */
+.cg-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:12.5px;font-weight:700;color:var(--cg-foret);
+  background:var(--cg-creme);border:1px solid var(--cg-line);
+  border-radius:var(--cg-r-pill);padding:7px 13px;cursor:pointer;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.cg-chip.is-on{background:var(--cg-foret);color:#fff;border-color:var(--cg-foret)}
+.cg-chip--accent.is-on{background:var(--cg-orange);border-color:var(--cg-orange)}
+
+.cg-seg{display:inline-flex;background:var(--cg-card);border:1px solid var(--cg-line);
+  border-radius:var(--cg-r-md);padding:3px;gap:2px}
+.cg-seg-b{border:none;background:transparent;border-radius:calc(var(--cg-r-md) - 4px);
+  padding:7px 13px;font:inherit;font-size:12.5px;font-weight:600;color:var(--cg-ink-soft);cursor:pointer;
+  transition:background .18s var(--cg-ease),color .18s}
+.cg-seg-b.is-on{background:var(--cg-ink);color:var(--cg-paper)}
+
+.cg-tag{display:inline-block;color:#fff;font-size:10.5px;font-weight:800;letter-spacing:.02em;
+  padding:3px 8px;border-radius:6px;background:var(--cg-foret)}
+.cg-tag--accent{background:var(--cg-orange)}
+.cg-tag--danger{background:var(--cg-brique)}
+.cg-tag--or{background:var(--cg-or)}
+
+/* ============================================================================
+   CHAMPS
+   ========================================================================== */
+.cg-input,.cg-select,.cg-textarea{
+  width:100%;font-family:var(--cg-sans);font-size:15px;color:var(--cg-ink);
+  background:var(--cg-card);border:1.5px solid var(--cg-line);border-radius:var(--cg-r-md);
+  padding:12px 14px;transition:border-color .15s,box-shadow .15s;
+}
+.cg-input:focus,.cg-select:focus,.cg-textarea:focus{
+  outline:none;border-color:var(--cg-foret-l);
+  box-shadow:0 0 0 3px rgba(78,112,89,.16);
+}
+.cg-textarea{resize:none}
+
+/* ============================================================================
+   BARRE DE DONNÉES  — jauge éditoriale avec repère d'objectif
+   ========================================================================== */
+.cg-bar{position:relative;height:9px;background:var(--cg-paper-2);border-radius:var(--cg-r-pill);overflow:hidden}
+.cg-bar-f{height:100%;border-radius:var(--cg-r-pill);background:var(--cg-foret);
+  transition:width .6s var(--cg-ease-out)}
+.cg-bar-f--accent{background:linear-gradient(90deg,var(--cg-orange),var(--cg-or))}
+.cg-bar-obj{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--cg-ink);z-index:2}
+
+/* ============================================================================
+   ALERTE / RUBAN
+   ========================================================================== */
+.cg-alert{background:var(--cg-brique);color:#fff;border-radius:var(--cg-r-md);padding:12px 14px;
+  box-shadow:var(--cg-sh-2)}
+.cg-alert-h{font-family:var(--cg-display);font-size:13px;letter-spacing:.01em;margin-bottom:6px}
+
+/* Ruban d'angle "plat du jour" */
+.cg-ribbon{position:absolute;top:12px;right:-30px;transform:rotate(45deg);
+  background:var(--cg-orange);color:#fff;font-size:10px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;padding:4px 34px;box-shadow:var(--cg-sh-1)}
+
+/* ============================================================================
+   ANIMATIONS D'ENTRÉE  — révélation en cascade au chargement
+   ========================================================================== */
+@keyframes cg-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes cg-fade{from{opacity:0}to{opacity:1}}
+.cg-rise{animation:cg-rise .6s var(--cg-ease-out) both}
+.cg-stagger>*{animation:cg-rise .55s var(--cg-ease-out) both}
+.cg-stagger>*:nth-child(1){animation-delay:.04s}
+.cg-stagger>*:nth-child(2){animation-delay:.10s}
+.cg-stagger>*:nth-child(3){animation-delay:.16s}
+.cg-stagger>*:nth-child(4){animation-delay:.22s}
+.cg-stagger>*:nth-child(5){animation-delay:.28s}
+.cg-stagger>*:nth-child(6){animation-delay:.34s}
+.cg-stagger>*:nth-child(7){animation-delay:.40s}
+.cg-stagger>*:nth-child(8){animation-delay:.46s}
+
+@media (prefers-reduced-motion:reduce){
+  .cg-rise,.cg-stagger>*{animation:none}
+  *{scroll-behavior:auto!important}
+}
