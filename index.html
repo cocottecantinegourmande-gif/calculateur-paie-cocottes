@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260808-1427 -->
+<!-- v20260808-1454 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -121,6 +121,8 @@
   .ratiocard .rv { font-size:30px; font-weight:800; font-variant-numeric:tabular-nums lining-nums; line-height:1; letter-spacing:-.01em; }
   .ratiocard .rl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--gris); font-weight:800; }
   .ratiocard .rs { font-size:12.5px; color:var(--cg-ink-soft); margin-top:2px; }
+  .etabbar { padding:14px; border:1.5px solid var(--bord); border-radius:var(--cg-r-md); background:var(--cg-card); margin-bottom:20px; }
+  .etabbar .src { margin-top:8px; }
 </style>
 </head>
 <body class="cg-grain">
@@ -135,6 +137,14 @@
   <div class="tab" data-tab="equipe">Masse salariale équipe</div>
 </nav>
 <main>
+<div class="etabbar">
+  <label class="txt" for="etab">Établissement</label>
+  <select id="etab">
+    <option value="CD9">Châteaudun · SAS ADAMOULYA</option>
+    <option value="LB8">Laborde · SAS DAMDOUM</option>
+  </select>
+  <p class="src" id="etabInfo"></p>
+</div>
 <div id="panel-salaire">
   <div id="alerteSmic"></div>
   <label class="txt" for="poste">Poste — grille conventionnelle</label>
@@ -194,13 +204,8 @@
       <div id="bulletin"></div>
       <h2>Côté employeur <small>(taux pleins 2026)</small></h2>
       <div id="employeur"></div>
-      <div class="rang" style="margin-top:16px">
-        <div><label class="txt">Site (pour le PDF)</label>
-          <select id="site" style="width:auto;min-width:200px">
-            <option value="CD9">Châteaudun · Adamoulya</option>
-            <option value="LB8">Laborde · Damdoum</option>
-          </select>
-        </div>
+      <p class="src" style="margin-top:16px">Le PDF reprend l'établissement sélectionné en haut de page.</p>
+      <div class="rang" style="margin-top:10px">
         <button class="btn-pdf" id="btnPdf" type="button">📄 Bulletin type PDF (A4)</button>
       </div>
     </div>
@@ -214,7 +219,7 @@
       <p class="src">Les échelons sous le SMIC restent affichés à leur valeur conventionnelle : le calculateur applique automatiquement le SMIC comme plancher. À la prochaine renégociation de branche, mets à jour ces valeurs.</p>
       <div id="glist" style="margin-top:8px"></div>
       <p class="src">Niveau V (cadres, minima annuels tous éléments confondus) : A 44 645,78 € · B 46 032,71 € · C 72 408,11 € — hors calculateur horaire.
-      Sources : Légifrance (avenant n°72 du 5 juin 2025), urssaf.fr, décret n°2025-887 du 4 septembre 2025 (RGDU : Tmin 0,0200 / Tdelta 0,3781 / P 1,75 / SMIC de référence gelé au 1er janvier : 12,02 €). Moteur recalé sur les bulletins Impulsa de juillet 2026 : écart inférieur à 1,50 € par bulletin. AT/MP 1,55 % (taux ADAMOULYA — à vérifier pour DAMDOUM), mutuelle 35,60 € et prévoyance IID 0,28 % relevées sur les bulletins. Modifications sauvegardées sur cet appareil.</p>
+      Sources : Légifrance (avenant n°72 du 5 juin 2025), urssaf.fr, décret n°2025-887 du 4 septembre 2025 (RGDU : Tmin 0,0200 / Tdelta 0,3781 / P 1,75 / SMIC de référence gelé au 1er janvier : 12,02 €). Moteur recalé sur les bulletins Combo Paie de mars et juillet 2026 : écart inférieur à 1,50 € par bulletin. Valeurs relevées sur les bulletins — ADAMOULYA (Châteaudun) : AT/MP 1,55 %, mutuelle 35,60 € ; DAMDOUM (Laborde) : AT/MP 1,78 %, mutuelle 37,60 €. Elles sont appliquées automatiquement par le sélecteur d'établissement en haut de page ; les modifier ci-dessus n'écrase que la session en cours. Prévoyance IID 0,28 % dans les deux sociétés. Modifications sauvegardées sur cet appareil.</p>
       <p style="margin-top:12px"><button id="reset" style="font:inherit;padding:8px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer">↩︎ Réinitialiser les valeurs par défaut</button></p>
     </div>
   </details>
@@ -254,7 +259,7 @@
 </div>
 </main>
 <div id="printZone"></div>
-<footer>Estimation indicative — non-cadre, &lt; 11 salariés, hors versement mobilité. Détails des règles dans « Paramètres ». Bulletin officiel : cabinet Impulsa.</footer>
+<footer>Estimation indicative — non-cadre, &lt; 11 salariés, hors versement mobilité. Détails des règles dans « Paramètres ». Bulletin officiel : Combo Paie.</footer>
 
 <script>
 "use strict";
@@ -266,7 +271,7 @@ const DEFAUTS = {
   sal: { vieillessePlaf: 6.90, vieillesseDeplaf: 0.40, arrcoT1: 3.15, cegT1: 0.86, csgCrds: 9.70 },
   pat: { maladie: 13.00, vieillessePlaf: 8.55, vieillesseDeplaf: 2.11, af: 5.25, arrcoT1: 4.72, cegT1: 1.29,
          chomage: 4.00, ags: 0.25, fnal: 0.10, csa: 0.30, atmp: 1.55, formation: 0.55, taxeApprentissage: 0.68, dialogueSocial: 0.016 },
-  rgdu: { tmin: 0.0200, tdelta: 0.3781, puissance: 1.75 }, // recalé sur les bulletins Impulsa de juillet 2026 (écart < 1,50 €/bulletin)
+  rgdu: { tmin: 0.0200, tdelta: 0.3781, puissance: 1.75 }, // recalé sur les bulletins Combo Paie de juillet 2026 (écart < 1,50 €/bulletin)
 };
 const GRILLE_DEFAUT = [
   { id:"I-A", label:"Niv. I — éch. A · équipier débutant", taux:11.88 },
@@ -284,15 +289,17 @@ const GRILLE_DEFAUT = [
 
 let P = JSON.parse(JSON.stringify(DEFAUTS));
 let grille = JSON.parse(JSON.stringify(GRILLE_DEFAUT));
+let etabInit = "CD9";
 try {
   const cfg = JSON.parse(localStorage.getItem("paie-config") || "null");
   if (cfg) {
+    if (cfg.etab) etabInit = cfg.etab;
     if (cfg.grille) grille = cfg.grille;
     if (cfg.P) P = Object.assign({}, DEFAUTS, cfg.P,
       { sal: Object.assign({}, DEFAUTS.sal, cfg.P.sal), pat: Object.assign({}, DEFAUTS.pat, cfg.P.pat), rgdu: Object.assign({}, DEFAUTS.rgdu, cfg.P.rgdu) });
   }
 } catch (e) {}
-function sauver() { try { localStorage.setItem("paie-config", JSON.stringify({ P, grille })); } catch (e) {} }
+function sauver() { try { localStorage.setItem("paie-config", JSON.stringify({ P, grille, etab: E.etab })); } catch (e) {} }
 
 const eur = (n, dec) => (n == null || isNaN(n)) ? "—" :
   n.toLocaleString("fr-FR", { minimumFractionDigits: dec ?? 2, maximumFractionDigits: dec ?? 2 }) + " €";
@@ -347,6 +354,7 @@ function calculer(o) {
 
 // ============ ÉTAT UI ============
 const E = {
+  etab: etabInit,
   poste: "IV-A", tauxH: 15.01, heuresA: 35, posteB: "IV-A", tauxB: 15.01, heuresB: 30, comparer: false,
   joursMois: 21, avecRepas: true, avecNavigo: true, tauxPAS: 0, primeMens: 0, ppvMens: 0, heuresSup: 0,
 };
@@ -385,6 +393,12 @@ function rendre() {
   const supA = Math.max(0, E.heuresA - 35);
   $("noteHS").hidden = supA <= 0;
   if (supA > 0) $("noteHS").textContent = "⏱️ " + E.heuresA.toLocaleString("fr-FR") + " h/sem = 35 h de base + " + supA.toLocaleString("fr-FR") + " h supp. (" + (supA <= 8 ? "+25 %" : "+25 % puis +50 %") + "), ajoutées automatiquement.";
+
+  $("etab").value = E.etab;
+  const etabObj = SITES[E.etab] || SITES.CD9;
+  const refOK = Math.abs(P.pat.atmp - etabObj.atmp) < 0.001 && Math.abs(P.alanTotal - etabObj.mutuelle) < 0.001;
+  $("etabInfo").textContent = etabObj.soc + " · " + etabObj.adr + " — AT/MP " + P.pat.atmp.toLocaleString("fr-FR")
+    + " % · mutuelle " + eur(P.alanTotal) + (refOK ? " (valeurs relevées sur les bulletins Combo Paie)" : " — valeurs modifiées manuellement");
 
   $("repasLbl").textContent = P.repasValeur.toLocaleString("fr-FR");
   $("navigoLbl").textContent = (P.navigo*P.navigoPct/100).toLocaleString("fr-FR",{minimumFractionDigits:2});
@@ -512,6 +526,12 @@ $("poste").onchange = (ev) => {
   if (t) { E.tauxH = Math.max(t, P.smicH); $("tauxH").value = E.tauxH.toFixed(2); }
   rendre();
 };
+$("etab").onchange = (ev) => {
+  E.etab = ev.target.value;
+  appliquerEtab();
+  sauver(); rendre();
+  if (!$("panel-equipe").hidden) rendreEquipe();
+};
 $("posteB").onchange = (ev) => {
   E.posteB = ev.target.value;
   const t = grille.find(g => g.id === E.posteB)?.taux;
@@ -521,15 +541,24 @@ $("posteB").onchange = (ev) => {
 $("reset").onclick = () => {
   if (!confirm("Remettre tous les taux et la grille aux valeurs par défaut ?")) return;
   P = JSON.parse(JSON.stringify(DEFAUTS)); grille = JSON.parse(JSON.stringify(GRILLE_DEFAUT));
+  appliquerEtab();
   sauver(); rendre();
 };
 
+// Paramètres propres à chaque société, relevés sur les bulletins Combo Paie de juillet 2026
 const SITES = {
-  CD9: { nom: "Cocottes Gourmandes — Châteaudun", soc: "SAS ADAMOULYA", adr: "14 rue de Châteaudun, 75009 Paris", siren: "SIREN 939 370 169" },
-  LB8: { nom: "Cocottes Gourmandes — Laborde", soc: "SAS DAMDOUM", adr: "42 rue de Laborde, 75008 Paris", siren: "" },
+  CD9: { nom: "Cocottes Gourmandes — Châteaudun", soc: "SAS ADAMOULYA", adr: "14 rue de Châteaudun, 75009 Paris",
+         siren: "SIRET 939 370 169 00012", atmp: 1.55, mutuelle: 35.60 },
+  LB8: { nom: "Cocottes Gourmandes — Laborde", soc: "SAS DAMDOUM", adr: "42 rue de Laborde, 75008 Paris",
+         siren: "SIRET 994 859 130 00019", atmp: 1.78, mutuelle: 37.60 },
 };
+function appliquerEtab() {
+  const s = SITES[E.etab]; if (!s) return;
+  P.pat.atmp = s.atmp;
+  P.alanTotal = s.mutuelle;
+}
 function bulletinPDF() {
-  const site = SITES[$("site").value];
+  const site = SITES[E.etab] || SITES.CD9;
   const posteObj = grille.find(g => g.id === E.poste) || grille[0];
   const A = calculer({ tauxH:E.tauxH, heures:E.heuresA, heuresSup:E.heuresSup, joursMois:E.joursMois, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens, ppvMens:E.ppvMens });
   const dte = new Date().toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
@@ -572,7 +601,7 @@ function bulletinPDF() {
     '</div>' +
     '<table><tr><th>Rubrique</th><th class="n">Montant</th></tr>' + rows + '</table>' +
     '<div class="pz-sign"><div>Signature employeur</div><div>Signature salarié</div></div>' +
-    '<div class="pz-foot">Document indicatif généré par le calculateur interne Cocottes Gourmandes — barèmes 2026 (SMIC 12,31 €/h, RGDU SMIC gelé 12,02 €, PMSS 4 005 €, grille avenant n°72). Ne remplace pas le bulletin de paie officiel établi par le cabinet Impulsa Conseil. Non-cadre, moins de 11 salariés, hors versement mobilité.</div>';
+    '<div class="pz-foot">Document indicatif généré par le calculateur interne Cocottes Gourmandes — barèmes 2026 (SMIC 12,31 €/h, RGDU SMIC gelé 12,02 €, PMSS 4 005 €, grille avenant n°72). Ne remplace pas le bulletin de paie officiel établi par Combo Paie. Non-cadre, moins de 11 salariés, hors versement mobilité.</div>';
   window.print();
 }
 $("btnPdf").onclick = bulletinPDF;
