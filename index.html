@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260808-1031 -->
+<!-- v20260808-1427 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -214,7 +214,7 @@
       <p class="src">Les échelons sous le SMIC restent affichés à leur valeur conventionnelle : le calculateur applique automatiquement le SMIC comme plancher. À la prochaine renégociation de branche, mets à jour ces valeurs.</p>
       <div id="glist" style="margin-top:8px"></div>
       <p class="src">Niveau V (cadres, minima annuels tous éléments confondus) : A 44 645,78 € · B 46 032,71 € · C 72 408,11 € — hors calculateur horaire.
-      Sources : Légifrance (avenant n°72), urssaf.fr, service-public.fr (RGDU : Tmin 0,0200 / Tdelta 0,3781 / P 1,75 / SMIC gelé 12,02 €). Modifications sauvegardées sur cet appareil.</p>
+      Sources : Légifrance (avenant n°72 du 5 juin 2025), urssaf.fr, décret n°2025-887 du 4 septembre 2025 (RGDU : Tmin 0,0200 / Tdelta 0,3781 / P 1,75 / SMIC de référence gelé au 1er janvier : 12,02 €). Moteur recalé sur les bulletins Impulsa de juillet 2026 : écart inférieur à 1,50 € par bulletin. AT/MP 1,55 % (taux ADAMOULYA — à vérifier pour DAMDOUM), mutuelle 35,60 € et prévoyance IID 0,28 % relevées sur les bulletins. Modifications sauvegardées sur cet appareil.</p>
       <p style="margin-top:12px"><button id="reset" style="font:inherit;padding:8px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer">↩︎ Réinitialiser les valeurs par défaut</button></p>
     </div>
   </details>
@@ -261,12 +261,12 @@
 // ============ BARÈMES 2026 VÉRIFIÉS ============
 const DEFAUTS = {
   smicH: 12.31, smicRGDU: 12.02, pmss: 4005, repasValeur: 4.35,
-  navigo: 90.80, navigoPct: 50, alanTotal: 37.60, alanEmpPct: 50,
-  hsRedSalPct: 11.31, hsDeducPat: 1.50,
+  navigo: 90.80, navigoPct: 50, alanTotal: 35.60, alanEmpPct: 50,
+  hsRedSalPct: 11.31, hsDeducPat: 1.50, prevPct: 0.28,
   sal: { vieillessePlaf: 6.90, vieillesseDeplaf: 0.40, arrcoT1: 3.15, cegT1: 0.86, csgCrds: 9.70 },
   pat: { maladie: 13.00, vieillessePlaf: 8.55, vieillesseDeplaf: 2.11, af: 5.25, arrcoT1: 4.72, cegT1: 1.29,
-         chomage: 4.00, ags: 0.25, fnal: 0.10, csa: 0.30, atmp: 1.50, formation: 0.55, taxeApprentissage: 0.68, dialogueSocial: 0.016 },
-  rgdu: { tmin: 0.0200, tdelta: 0.3781, puissance: 1.75 },
+         chomage: 4.00, ags: 0.25, fnal: 0.10, csa: 0.30, atmp: 1.55, formation: 0.55, taxeApprentissage: 0.68, dialogueSocial: 0.016 },
+  rgdu: { tmin: 0.0200, tdelta: 0.3781, puissance: 1.75 }, // recalé sur les bulletins Impulsa de juillet 2026 (écart < 1,50 €/bulletin)
 };
 const GRILLE_DEFAUT = [
   { id:"I-A", label:"Niv. I — éch. A · équipier débutant", taux:11.88 },
@@ -310,12 +310,16 @@ function calculer(o) {
   const brutSoumis = brutBase + avNature;
   const plafond = Math.min(brutSoumis, P.pmss);
   const s = P.sal, p = P.pat;
-  const cotS = plafond*s.vieillessePlaf/100 + brutSoumis*s.vieillesseDeplaf/100
-             + plafond*(s.arrcoT1+s.cegT1)/100 + brutSoumis*0.9825*s.csgCrds/100;
-  const redSalHS = hsMensBrut * (P.hsRedSalPct || 0) / 100;
-  const deducPatHS = nbHSmois * (P.hsDeducPat || 0);
   const alanSal = P.alanTotal * (1 - P.alanEmpPct/100);
   const alanPat = P.alanTotal * (P.alanEmpPct/100);
+  const prevSal = brutSoumis * (P.prevPct || 0) / 100; // prévoyance incapacité / invalidité / décès TA-T1
+  const prevPat = brutSoumis * (P.prevPct || 0) / 100;
+  // Assiette CSG/CRDS : brut abattu de 1,75 % + contributions patronales santé et prévoyance (sans abattement)
+  const csgBase = brutSoumis*0.9825 + alanPat + prevPat;
+  const cotS = plafond*s.vieillessePlaf/100 + brutSoumis*s.vieillesseDeplaf/100
+             + plafond*(s.arrcoT1+s.cegT1)/100 + csgBase*s.csgCrds/100 + prevSal;
+  const redSalHS = hsMensBrut * (P.hsRedSalPct || 0) / 100;
+  const deducPatHS = nbHSmois * (P.hsDeducPat || 0);
   const prorata = o.heures >= 17.5 ? 1 : o.heures/17.5;
   const navigoRemb = o.avecNavigo ? (P.navigo * P.navigoPct/100) * prorata : 0;
   const ppv = o.ppvMens || 0; // PPV : exonérée de cotisations (< 50 sal., < 3 SMIC) mais réintégrée dans la rému RGDU (BOSS §170-180, depuis 2025)
@@ -324,7 +328,7 @@ function calculer(o) {
   const pas = assietteIR * ((o.tauxPAS||0)/100);
   const netApresImpot = netAvantImpot - pas;
   const tauxDeplaf = p.maladie+p.vieillesseDeplaf+p.af+p.chomage+p.ags+p.fnal+p.csa+p.atmp+p.formation+p.taxeApprentissage+p.dialogueSocial;
-  const cotP = brutSoumis*tauxDeplaf/100 + plafond*(p.vieillessePlaf+p.arrcoT1+p.cegT1)/100;
+  const cotP = brutSoumis*tauxDeplaf/100 + plafond*(p.vieillessePlaf+p.arrcoT1+p.cegT1)/100 + prevPat;
   const smicRef = P.smicRGDU * hMens;
   const remuRGDU = brutSoumis + ppv;
   const ratio = remuRGDU / smicRef;
@@ -335,7 +339,9 @@ function calculer(o) {
     coef = Math.min(coef, P.rgdu.tmin + P.rgdu.tdelta);
   }
   const reduction = remuRGDU * coef;
-  const coutEmployeur = brutSoumis + cotP - reduction + alanPat + navigoRemb - deducPatHS + ppv;
+  // Coût = « Total versé par l'employeur » du bulletin : l'avantage repas est reintégré au brut pour les
+  // cotisations puis reprisé, car ce n'est pas une sortie de caisse (le coût réel des repas est en food cost).
+  const coutEmployeur = brutSoumis - avNature + cotP - reduction + alanPat + navigoRemb - deducPatHS + ppv;
   return { hMens, hMensBase, sup, brutBase, hsMensBrut, redSalHS, deducPatHS, avNature, brutSoumis, cotS, netAvantImpot, pas, netApresImpot, cotP, coef, reduction, coutEmployeur, alanSal, alanPat, navigoRemb, ppv };
 }
 
@@ -467,8 +473,9 @@ function rendreParams() {
     ["SMIC RGDU (gelé) €/h", () => P.smicRGDU, v => P.smicRGDU = v],
     ["Repas €/jour", () => P.repasValeur, v => P.repasValeur = v],
     ["AT/MP %", () => P.pat.atmp, v => P.pat.atmp = v],
-    ["Alan — cotisation totale €", () => P.alanTotal, v => P.alanTotal = v],
-    ["Alan — part employeur %", () => P.alanEmpPct, v => P.alanEmpPct = Math.min(100, v), "1"],
+    ["Mutuelle — cotisation totale €", () => P.alanTotal, v => P.alanTotal = v],
+    ["Mutuelle — part employeur %", () => P.alanEmpPct, v => P.alanEmpPct = Math.min(100, v), "1"],
+    ["Prévoyance IID % (chaque part)", () => P.prevPct, v => P.prevPct = v],
     ["Navigo mensuel €", () => P.navigo, v => P.navigo = v],
     ["Navigo — prise en charge %", () => P.navigoPct, v => P.navigoPct = Math.max(50, Math.min(100, v)), "1"],
     ["Réduc. cotis. salariales HS %", () => P.hsRedSalPct, v => P.hsRedSalPct = v],
