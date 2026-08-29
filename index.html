@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260830-0045 -->
+<!-- v20260830-0225 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -28,7 +28,8 @@
   h1 { font-family:var(--cg-display); font-weight:400; font-size:26px; margin:4px 0 5px; color:var(--vert); letter-spacing:-.01em; }
   header p { font-size:12px; color:var(--gris); margin:0; }
   main { max-width:680px; margin:0 auto; padding:18px 16px 34px; position:relative; z-index:1; }
-  @media (min-width:1100px){ main, .tabs { max-width:1000px; } }
+  input:disabled { opacity:.55; background:var(--cg-paper-2); cursor:not-allowed; }
+  input[type=range] { accent-color:var(--orange); }
   label.txt { display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--gris); margin-bottom:6px; }
   select, input[type=number] { font:inherit; padding:11px 12px; border:1.5px solid var(--bord); border-radius:var(--cg-r-md); background:var(--cg-card); min-height:46px; color:var(--cg-ink); transition:border-color .15s, box-shadow .15s; }
   input[type=number] { text-align:right; font-variant-numeric:tabular-nums lining-nums; width:104px; }
@@ -102,6 +103,13 @@
   .tabs { display:flex; gap:5px; max-width:680px; margin:0 auto; padding:16px 16px 0; position:relative; z-index:1; }
   .tab { flex:1; text-align:center; padding:12px 8px; font-size:13px; font-weight:700; color:var(--gris); background:var(--cg-paper-2); border:1px solid var(--bord); border-bottom:none; border-radius:12px 12px 0 0; cursor:pointer; transition:color .15s, background .15s; }
   .tab.on { color:var(--vert); background:var(--cg-card); box-shadow:inset 0 -3px 0 var(--orange); }
+  /* PC : onglets en fenêtre latérale fixe, contenu élargi (après les règles de base pour les surcharger) */
+  @media (min-width:1100px){
+    main { max-width:1000px; margin-left:max(292px, calc(50vw - 500px)); margin-right:16px; }
+    .tabs { position:fixed; top:132px; left:max(16px, calc(50vw - 500px - 276px)); flex-direction:column; width:244px; max-width:244px; padding:0; gap:8px; }
+    .tab { flex:none; text-align:left; padding:13px 16px; border:1px solid var(--bord); border-radius:12px; }
+    .tab.on { box-shadow:inset 4px 0 0 var(--orange); }
+  }
   .eqline { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; padding:9px 0; border-bottom:1px solid var(--cg-line); }
   .eqline > div { display:flex; flex-direction:column; }
   .eqline .eqposte { flex:1; }
@@ -140,14 +148,6 @@
   <div class="tab" data-tab="dir">Dirigeant</div>
 </nav>
 <main>
-<div class="etabbar">
-  <label class="txt" for="etab">Établissement</label>
-  <select id="etab">
-    <option value="CD9">Châteaudun · SAS ADAMOULYA</option>
-    <option value="LB8">Laborde · SAS DAMDOUM</option>
-  </select>
-  <p class="src" id="etabInfo"></p>
-</div>
 <div id="panel-salaire">
   <div id="alerteSmic"></div>
   <label class="txt" for="poste">Poste — grille conventionnelle</label>
@@ -219,6 +219,14 @@
   <details>
     <summary>Paramètres, taux &amp; grille conventionnelle</summary>
     <div class="params">
+      <div class="etabbar" style="margin-top:14px">
+        <label class="txt" for="etab">Établissement (AT/MP et mutuelle propres à chaque société)</label>
+        <select id="etab">
+          <option value="CD9">Châteaudun · SAS ADAMOULYA</option>
+          <option value="LB8">Laborde · SAS DAMDOUM</option>
+        </select>
+        <p class="src" id="etabInfo"></p>
+      </div>
       <div class="pgrid" id="pgrid"></div>
       <p class="txt" style="margin-top:18px">Grille des minima IDCC 1501 (€/h brut) — avenant n°72, valeurs conventionnelles brutes</p>
       <p class="src">Les échelons sous le SMIC restent affichés à leur valeur conventionnelle : le calculateur applique automatiquement le SMIC comme plancher. À la prochaine renégociation de branche, mets à jour ces valeurs.</p>
@@ -269,6 +277,12 @@
   <p class="note-i">Compose ton équipe : choisis le poste (niveau &amp; échelon), les heures hebdo et le nombre de personnes. La masse salariale est ventilée <b>brut + charges patronales</b> (réduction générale RGDU 2026 déduite), sur la semaine, le mois et l'année.</p>
 
   <div class="rang" style="margin:12px 0 6px">
+    <div><label class="txt">Établissement</label>
+      <select id="etabEq">
+        <option value="CD9">Châteaudun</option>
+        <option value="LB8">Laborde</option>
+      </select>
+    </div>
     <label class="check"><input type="checkbox" id="eqRepas" checked> Repas fourni</label>
     <label class="check"><input type="checkbox" id="eqNavigo" checked> Navigo 50 %</label>
     <div><label class="txt">CA mensuel HT (€)</label><input type="number" id="eqCA" step="500" min="0" placeholder="ex. 45000" style="width:120px"></div>
@@ -307,32 +321,34 @@
     <label class="check"><input type="checkbox" id="dirInteg" checked> Intégration fiscale (holding ≥ 95 %)</label>
   </div>
   <div class="rang" id="dirRemonteeWrap" hidden>
-    <div><label class="txt">Résultat avant IS — Châteaudun (€/an)</label><input type="number" id="dirR1" step="5000" min="0" style="width:105px"></div>
-    <div><label class="txt">Résultat avant IS — Laborde (€/an)</label><input type="number" id="dirR2" step="5000" min="0" style="width:105px"></div>
+    <div><label class="txt">Résultat avant IS — Châteaudun (€/an, négatif si perte)</label><input type="number" id="dirR1" step="5000" style="width:105px"></div>
+    <div><label class="txt">Résultat avant IS — Laborde (€/an, négatif si perte)</label><input type="number" id="dirR2" step="5000" style="width:105px"></div>
     <button class="btn-add" id="dirSync" type="button" style="margin-top:0">↺ Récupérer depuis le Pilotage</button>
     <div><label class="txt">Prestations facturées par la holding (€/an)</label><input type="number" id="dirFees" step="5000" min="0" style="width:105px"></div>
   </div>
   <p class="src" id="dirSyncInfo" hidden></p>
   <p class="src" id="dirFeesNote" hidden>⚠️ <b>Facturation holding → restos</b> : uniquement pour des <b>prestations réelles et distinctes du mandat social</b> (compta, RH, achats, marketing…), avec convention écrite et prix de marché — la Cour de cassation (juin 2026) requalifie les management fees qui rémunèrent la fonction de dirigeant. <b>En intégration fiscale, cette facturation est fiscalement neutre</b> (même résultat de groupe) : son intérêt est ailleurs (trésorerie régulière de la holding sans attendre les dividendes). <b>Hors intégration</b>, elle rend ta rémunération déductible chez la holding à hauteur des prestations facturées, et la holding dispose de son propre tronçon d'IS à 15 %.</p>
-  <p class="src" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu.</p>
+  <p class="src" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu. <b>Si un resto est en perte</b> : en intégration fiscale, sa perte s'impute immédiatement sur le bénéfice de l'autre (moins d'IS de groupe) ; sans intégration, elle est seulement reportée sur ses bénéfices futurs (non modélisé ici) et ce resto ne remonte aucun dividende.</p>
   <div class="rang" style="margin-top:12px">
     <div><label class="txt">Enveloppe annuelle (€, avant IS)</label><input type="number" id="dirEnv" step="5000" min="0" style="width:110px"></div>
     <div><label class="txt">Part en rémunération %</label><input type="number" id="dirRem" step="5" min="0" max="100" style="width:75px"></div>
     <div><label class="txt">Objectif net / mois (€, optionnel)</label><input type="number" id="dirObj" step="250" min="0" style="width:95px"></div>
   </div>
   <div class="rang">
-    <div><label class="txt">Capital de la holding (€)</label><input type="number" id="dirCap" step="10000" min="0" style="width:110px"></div>
+    <div><label class="txt">Capital de la holding (€)</label><input type="number" id="dirCap" step="10000" min="0" style="width:110px"><span class="src" id="dirCapSeuil" style="display:block;margin-top:3px"></span></div>
     <div><label class="txt">Parts fiscales du foyer</label>
       <select id="dirParts" style="width:75px"><option value="1">1</option><option value="1.5">1,5</option><option value="2">2</option><option value="2.5" selected>2,5</option><option value="3">3</option><option value="4">4</option></select>
     </div>
     <div><label class="txt">Autres revenus imposables du foyer / an (€)</label><input type="number" id="dirAutres" step="1000" min="0" style="width:100px"></div>
   </div>
   <p class="src" style="margin-top:2px">« Autres revenus » : salaires du conjoint et autres revenus imposables du foyer (après abattement). L'impôt est calculé au barème réel 2026 par tranches (11 600 / 29 579 / 84 577 / 181 917 €), avec quotient familial plafonné (~1 807 € par demi-part au-delà de 2 parts).</p>
-  <div class="rang">
-    <div><label class="txt">Épargne salariale / an (€)</label><input type="number" id="dirES" step="1000" min="0" style="width:95px"></div>
-    <div><label class="txt">PER individuel / an (€)</label><input type="number" id="dirPER" step="1000" min="0" style="width:95px"></div>
-    <div><label class="txt">CESU préfinancé / an (€)</label><input type="number" id="dirCESU" step="100" min="0" style="width:90px"></div>
-    <div><label class="txt">Compte courant prêté (€)</label><input type="number" id="dirCCA" step="10000" min="0" style="width:105px"></div>
+  <div class="rang" style="row-gap:14px">
+    <div style="flex:1;min-width:230px"><label class="txt">Épargne salariale / an — <b id="dirESv"></b></label><input type="range" id="dirES" min="0" max="47580" step="500" style="width:100%"></div>
+    <div style="flex:1;min-width:230px"><label class="txt">PER individuel / an — <b id="dirPERv"></b> <span class="src" id="dirPERmax" style="display:inline"></span></label><input type="range" id="dirPER" min="0" max="10000" step="250" style="width:100%"></div>
+  </div>
+  <div class="rang" style="row-gap:14px">
+    <div style="flex:1;min-width:230px"><label class="txt">CESU préfinancé / an — <b id="dirCESUv"></b></label><input type="range" id="dirCESU" min="0" max="2540" step="20" style="width:100%"></div>
+    <div style="flex:1;min-width:230px"><label class="txt">Compte courant prêté — <b id="dirCCAv"></b></label><input type="range" id="dirCCA" min="0" max="300000" step="5000" style="width:100%"></div>
   </div>
   <p class="note-i" id="dirAlertes" hidden></p>
   <p class="src">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable (plafond ~10 % des revenus pro). CESU : ≤ 2 540 €/an, zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
@@ -645,13 +661,17 @@ $("poste").onchange = (ev) => {
   if (t) { E.tauxH = Math.max(t, P.smicH); $("tauxH").value = E.tauxH.toFixed(2); }
   rendre();
 };
-$("etab").onchange = (ev) => {
-  E.etab = ev.target.value;
+function changerEtab(val) {
+  E.etab = val;
   appliquerEtab();
+  $("etab").value = val; $("etabEq").value = val;
   sauver(); rendre();
   if (!$("panel-equipe").hidden) rendreEquipe();
   if (!$("panel-optim").hidden) rendreOptim();
-};
+}
+$("etab").onchange = (ev) => changerEtab(ev.target.value);
+$("etabEq").onchange = (ev) => changerEtab(ev.target.value);
+$("etabEq").value = E.etab;
 $("posteB").onchange = (ev) => {
   E.posteB = ev.target.value;
   const t = grille.find(g => g.id === E.posteB)?.taux;
@@ -1056,16 +1076,21 @@ function dirFlux(remPct, envInput) {
     return { envAff: P, envRem, envDiv: Math.max(0, divPool - qp), isExt: isTot, qp };
   }
   // Sans intégration : IS payé par chaque resto (un tronçon à 15 % chacun), remontée mère-fille (quote-part 5 %).
-  // Les prestations facturées par la holding déplacent du résultat vers elle : la rémunération y devient
-  // déductible à hauteur des prestations, et la holding a son propre tronçon d'IS à 15 %.
-  const tot = DIR.r1 + DIR.r2, ratio = tot > 0 ? P / tot : 1;
-  const F = Math.min(DIR.fees || 0, P);
-  const f1 = tot > 0 ? F * DIR.r1 / tot : F / 2, f2 = F - f1;
-  const isFilles = isc(Math.max(0, DIR.r1 - f1) * ratio) + isc(Math.max(0, DIR.r2 - f2) * ratio);
-  const brutRemontee = Math.max(0, P - F - isFilles);
+  // Un resto en perte ne paie pas d'IS mais ne remonte rien (report de déficit non modélisé) et sa perte
+  // ne réduit pas l'IS de l'autre. Les prestations facturées ciblent les restos bénéficiaires.
+  const tot = DIR.r1 + DIR.r2, ratio = tot !== 0 ? P / tot : 1;
+  const posTot = Math.max(0, DIR.r1) + Math.max(0, DIR.r2);
+  const F = Math.min(DIR.fees || 0, Math.max(0, posTot * ratio));
+  const f1 = posTot > 0 ? F * Math.max(0, DIR.r1) / posTot : 0, f2 = F - f1;
+  const is1 = isc(Math.max(0, (DIR.r1 * ratio) - f1)), is2 = isc(Math.max(0, (DIR.r2 * ratio) - f2));
+  const isFilles = is1 + is2;
+  const brutRemontee = Math.max(0, (DIR.r1 * ratio) - f1 - is1) + Math.max(0, (DIR.r2 * ratio) - f2 - is2);
   const qp = brutRemontee * 0.05 * 0.15;
   const isHold = isc(Math.max(0, F - envRem - L));
-  const dispo = Math.max(0, brutRemontee - qp + F - isHold);
+  // La perte d'un resto brûle du cash qui doit être financé par le groupe : elle réduit le distribuable
+  // même sans intégration (seule l'économie d'IS diffère entre les deux régimes).
+  const pertes = Math.max(0, -DIR.r1 * ratio) + Math.max(0, -DIR.r2 * ratio);
+  const dispo = Math.max(0, brutRemontee - qp + F - isHold - pertes);
   const envRemEff = Math.min(envRem, dispo);
   return { envAff: P, envRem: envRemEff, envDiv: Math.max(0, dispo - envRemEff - L), isExt: isFilles + isHold, qp, horsDeduc: envRem + L > F + 0.01, fees: F };
 }
@@ -1086,18 +1111,29 @@ function rendreDir() {
   $("dirEurl").textContent = eur(U.cash / 12, 0);
   $("dirEurlSub").textContent = eur(U.cash, 0) + "/an en cash" + (U.bloque > 0 ? " + " + eur(U.bloque, 0) + " épargnés" : "") + " · " + ((U.total) / DIR.env * 100).toFixed(0) + " % de l'enveloppe";
 
+  // Curseurs des leviers : montants affichés et plafond PER dynamique (~10 % des revenus professionnels)
+  const perMax = Math.max(4710, Math.round(Math.max(S.netRem, U.netRem) * 0.10 / 250) * 250);
+  $("dirPER").max = perMax;
+  if (DIR.per > perMax) { DIR.per = perMax; $("dirPER").value = perMax; }
+  $("dirESv").textContent = eur(DIR.es, 0) + " / 47 580 €";
+  $("dirPERv").textContent = eur(DIR.per, 0);
+  $("dirPERmax").textContent = "(plafond ~" + eur(perMax, 0) + ")";
+  $("dirCESUv").textContent = eur(DIR.cesu, 0) + " / 2 540 €";
+  $("dirCCAv").textContent = eur(DIR.cca, 0) + " (intérêts " + eur(DIR.cca * 0.0433, 0) + "/an)";
+  const depasseSeuil = U.cotisDiv > 0.5;
+  $("dirCapSeuil").innerHTML = "EURL : dividendes <b>sans cotisations TNS jusqu'à " + eur(DIR.cap * 0.10, 0) + "/an</b> (10 % du capital)" + (depasseSeuil ? ' — <span style="color:var(--brique);font-weight:700">seuil dépassé à cette répartition</span>' : "");
+
   // Alertes plafonds
   const al = [];
   if (DIR.es > 47580) al.push("Épargne salariale au-delà des plafonds cumulés (47 580 €/an : intéressement 36 045 + PEE 3 845 + PERECO 7 690).");
   if (DIR.cesu > 2540) al.push("CESU au-delà du plafond exonéré (2 540 €/an) — l'excédent serait requalifié.");
-  if (DIR.per > Math.max(4710, (S.netRem) * 0.10)) al.push("PER probablement au-delà du plafond déductible (~10 % des revenus professionnels).");
   if (DIR.remontee && !DIR.integ && F.horsDeduc) al.push("Sans intégration fiscale, la part de rémunération et de leviers qui dépasse les prestations facturées par la holding est payée sur un résultat déjà imposé (déficit holding perdu). Augmente les prestations facturées (si elles sont réelles) ou opte pour l'intégration fiscale.");
   $("dirAlertes").hidden = !al.length;
   $("dirAlertes").textContent = al.length ? "⚠️ " + al.join(" ") : "";
 
   const tr2 = (lib, a, b, cls) => "<tr" + (cls ? ' class="' + cls + '"' : "") + "><td>" + lib + "</td><td>" + eur(a, 0) + "</td><td>" + eur(b, 0) + "</td></tr>";
   let d = "<thead><tr><th></th><th>Holding SASU</th><th>Holding EURL</th></tr></thead><tbody>";
-  if (DIR.remontee) d += tr2("Résultat des restos avant IS", F.envAff, F.envAff);
+  if (DIR.remontee) d += tr2("Résultat des restos avant IS" + ((DIR.r1 < 0 || DIR.r2 < 0) ? " (net de la perte)" : ""), F.envAff, F.envAff);
   if (DIR.remontee && F.fees > 0) d += tr2("Prestations facturées par la holding" + (DIR.integ ? " (neutre en intégration)" : ""), F.fees, F.fees);
   d += tr2("Enveloppe rémunération" + (F.horsDeduc ? " (non déductible ⚠️)" : ""), envRem, envRem);
   d += tr2("Cotisations sociales", -S.cotis, -U.cotis);
@@ -1151,13 +1187,20 @@ function rendreDir() {
 
 [["dirEnv","env"],["dirRem","remPct"],["dirCap","cap"],["dirAutres","autres"],["dirES","es"],["dirPER","per"],["dirCESU","cesu"],["dirCCA","cca"],["dirObj","obj"]].forEach(([id,cle]) => {
   $(id).value = DIR[cle];
-  $(id).oninput = () => { DIR[cle] = Math.max(0, parseFloat($(id).value) || 0); if (cle === "remPct") DIR[cle] = Math.min(100, DIR[cle]); sauverDir(); rendreDir(); };
+  $(id).oninput = () => {
+    // En mode « depuis les restos », l'enveloppe est calculée : toute saisie manuelle est ignorée.
+    if (cle === "env" && DIR.remontee) { $(id).value = DIR.r1 + DIR.r2; return; }
+    DIR[cle] = Math.max(0, parseFloat($(id).value) || 0);
+    if (cle === "remPct") DIR[cle] = Math.min(100, DIR[cle]);
+    sauverDir(); rendreDir();
+  };
 });
 $("dirParts").value = DIR.parts;
 $("dirParts").onchange = () => { DIR.parts = parseFloat($("dirParts").value) || 2; sauverDir(); rendreDir(); };
 [["dirR1","r1"],["dirR2","r2"],["dirFees","fees"]].forEach(([id,cle]) => {
   $(id).value = DIR[cle];
-  $(id).oninput = () => { DIR[cle] = Math.max(0, parseFloat($(id).value) || 0); sauverDir(); rendreDir(); };
+  // r1/r2 peuvent être négatifs (resto en perte) ; les prestations facturées restent positives.
+  $(id).oninput = () => { const v = parseFloat($(id).value) || 0; DIR[cle] = cle === "fees" ? Math.max(0, v) : v; sauverDir(); rendreDir(); };
 });
 $("dirRemontee").checked = DIR.remontee;
 $("dirRemontee").onchange = () => { DIR.remontee = $("dirRemontee").checked; sauverDir(); rendreDir(); };
@@ -1188,10 +1231,10 @@ $("dirSync").onclick = async () => {
     if (!agg.cd9 && !agg.lb8) throw new Error("aucune ligne comptable");
     const annualise = (a) => a && a.mois.size ? Math.round(a.res * 12 / a.mois.size) : 0;
     const r1 = annualise(agg.cd9), r2 = annualise(agg.lb8);
-    DIR.r1 = Math.max(0, r1); DIR.r2 = Math.max(0, r2); DIR.remontee = true;
+    DIR.r1 = r1; DIR.r2 = r2; DIR.remontee = true;
     $("dirR1").value = DIR.r1; $("dirR2").value = DIR.r2; $("dirRemontee").checked = true;
     $("dirSyncInfo").hidden = false;
-    $("dirSyncInfo").textContent = "Réel comptable du Pilotage, annualisé (mois en cours exclu — " + (agg.cd9 ? agg.cd9.mois.size : 0) + " mois Châteaudun, " + (agg.lb8 ? agg.lb8.mois.size : 0) + " mois Laborde) : Châteaudun " + eur(r1, 0) + (r1 < 0 ? " (perte, ramenée à 0)" : "") + " · Laborde " + eur(r2, 0) + (r2 < 0 ? " (perte, ramenée à 0)" : "") + ". Résultat avant IS, avant ta future rémunération et avant les changements d'équipe — ajuste à la main si besoin.";
+    $("dirSyncInfo").textContent = "Réel comptable du Pilotage, annualisé (mois en cours exclu — " + (agg.cd9 ? agg.cd9.mois.size : 0) + " mois Châteaudun, " + (agg.lb8 ? agg.lb8.mois.size : 0) + " mois Laborde) : Châteaudun " + eur(r1, 0) + (r1 < 0 ? " (perte)" : "") + " · Laborde " + eur(r2, 0) + (r2 < 0 ? " (perte)" : "") + ". Résultat avant IS, avant ta future rémunération et avant les changements d'équipe — ajuste à la main si besoin.";
     sauverDir(); rendreDir();
   } catch (e) {
     $("dirSyncInfo").hidden = false;
