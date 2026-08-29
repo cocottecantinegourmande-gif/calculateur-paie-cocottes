@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260829-2125 -->
+<!-- v20260830-0010 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -28,6 +28,7 @@
   h1 { font-family:var(--cg-display); font-weight:400; font-size:26px; margin:4px 0 5px; color:var(--vert); letter-spacing:-.01em; }
   header p { font-size:12px; color:var(--gris); margin:0; }
   main { max-width:680px; margin:0 auto; padding:18px 16px 34px; position:relative; z-index:1; }
+  @media (min-width:1100px){ main, .tabs { max-width:1000px; } }
   label.txt { display:block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--gris); margin-bottom:6px; }
   select, input[type=number] { font:inherit; padding:11px 12px; border:1.5px solid var(--bord); border-radius:var(--cg-r-md); background:var(--cg-card); min-height:46px; color:var(--cg-ink); transition:border-color .15s, box-shadow .15s; }
   input[type=number] { text-align:right; font-variant-numeric:tabular-nums lining-nums; width:104px; }
@@ -135,7 +136,8 @@
 <nav class="tabs">
   <div class="tab on" data-tab="salaire">Salaire d'un poste</div>
   <div class="tab" data-tab="optim">Heures × PPV</div>
-  <div class="tab" data-tab="equipe">Masse salariale équipe</div>
+  <div class="tab" data-tab="equipe">Masse équipe</div>
+  <div class="tab" data-tab="dir">Dirigeant</div>
 </nav>
 <main>
 <div class="etabbar">
@@ -260,7 +262,7 @@
 
   <h2>Matrice coût employeur — heures × PPV</h2>
   <div style="overflow-x:auto"><table class="mtab" id="opMatrice"></table></div>
-  <p class="src">Chaque case : <b>coût employeur mensuel</b> et, en dessous, le net versé. Couleur = coût pour 1 € net versé (vert = efficace, orange = cher). Au-delà de 35 h, les heures supplémentaires majorées sont comptées automatiquement. Jours de repas au prorata des heures.</p>
+  <p class="src">Chaque case : <b>coût employeur mensuel</b> et, en dessous, le net versé. Couleur = coût pour 1 € net versé (vert = efficace, orange = cher). Au-delà de 35 h, les heures supplémentaires majorées sont comptées automatiquement (+25 % jusqu'à 43 h). <b>⚠️ au-delà de 39 h</b> : plus de 220 h supplémentaires par an en structurel — le contingent conventionnel est dépassé (contrepartie obligatoire en repos, risque en cas de contrôle) et il ne reste aucune marge pour les semaines chargées ponctuelles. À réserver à la simulation, pas au contrat permanent.</p>
 </div>
 
 <div id="panel-equipe" hidden>
@@ -295,6 +297,63 @@
     <tbody id="eqBody"></tbody>
   </table>
   <p class="src">Toute durée saisie <b>au-delà de 35 h/sem</b> est automatiquement comptée en heures supplémentaires (+25 % jusqu'à 43 h, +50 % au-delà) — signalées par un badge « +n HS ». Brut = brut soumis à cotisations (salaire + heures supp. majorées + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo + PPV et forfait mobilité éventuels, moins la déduction forfaitaire sur heures supp. La <b>PPV</b> est exonérée de cotisations (≤ 3 000 €/an) mais réintégrée dans la rémunération servant au calcul de la RGDU ; le <b>forfait mobilité</b> est exonéré (600 €/an, ou 900 €/an cumulés avec le Navigo) et sans effet sur la RGDU. Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
+</div>
+
+<div id="panel-dir" hidden>
+  <p class="note-i">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %).</p>
+
+  <div class="rang" style="margin-top:12px">
+    <label class="check"><input type="checkbox" id="dirRemontee"> Calculer depuis les résultats des restos</label>
+    <label class="check"><input type="checkbox" id="dirInteg" checked> Intégration fiscale (holding ≥ 95 %)</label>
+  </div>
+  <div class="rang" id="dirRemonteeWrap" hidden>
+    <div><label class="txt">Résultat avant IS — Châteaudun (€/an)</label><input type="number" id="dirR1" step="5000" min="0" style="width:105px"></div>
+    <div><label class="txt">Résultat avant IS — Laborde (€/an)</label><input type="number" id="dirR2" step="5000" min="0" style="width:105px"></div>
+    <button class="btn-add" id="dirSync" type="button" style="margin-top:0">↺ Récupérer depuis le Pilotage</button>
+  </div>
+  <p class="src" id="dirSyncInfo" hidden></p>
+  <p class="src" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu.</p>
+  <div class="rang" style="margin-top:12px">
+    <div><label class="txt">Enveloppe annuelle (€, avant IS)</label><input type="number" id="dirEnv" step="5000" min="0" style="width:110px"></div>
+    <div><label class="txt">Part en rémunération %</label><input type="number" id="dirRem" step="5" min="0" max="100" style="width:75px"></div>
+    <div><label class="txt">Objectif net / mois (€, optionnel)</label><input type="number" id="dirObj" step="250" min="0" style="width:95px"></div>
+  </div>
+  <div class="rang">
+    <div><label class="txt">Capital de la holding (€)</label><input type="number" id="dirCap" step="10000" min="0" style="width:110px"></div>
+    <div><label class="txt">Parts fiscales du foyer</label>
+      <select id="dirParts" style="width:75px"><option value="1">1</option><option value="1.5">1,5</option><option value="2">2</option><option value="2.5" selected>2,5</option><option value="3">3</option><option value="4">4</option></select>
+    </div>
+    <div><label class="txt">Autres revenus imposables du foyer / an (€)</label><input type="number" id="dirAutres" step="1000" min="0" style="width:100px"></div>
+  </div>
+  <p class="src" style="margin-top:2px">« Autres revenus » : salaires du conjoint et autres revenus imposables du foyer (après abattement). L'impôt est calculé au barème réel 2026 par tranches (11 600 / 29 579 / 84 577 / 181 917 €), avec quotient familial plafonné (~1 807 € par demi-part au-delà de 2 parts).</p>
+  <div class="rang">
+    <div><label class="txt">Épargne salariale / an (€)</label><input type="number" id="dirES" step="1000" min="0" style="width:95px"></div>
+    <div><label class="txt">PER individuel / an (€)</label><input type="number" id="dirPER" step="1000" min="0" style="width:95px"></div>
+    <div><label class="txt">CESU préfinancé / an (€)</label><input type="number" id="dirCESU" step="100" min="0" style="width:90px"></div>
+    <div><label class="txt">Compte courant prêté (€)</label><input type="number" id="dirCCA" step="10000" min="0" style="width:105px"></div>
+  </div>
+  <p class="note-i" id="dirAlertes" hidden></p>
+  <p class="src">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable (plafond ~10 % des revenus pro). CESU : ≤ 2 540 €/an, zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
+  <div class="ratiocard" id="dirObjCard" hidden style="border-left-color:var(--orange)">
+    <div><div class="rv" id="dirObjVal" style="color:var(--orange)"></div></div>
+    <div><div class="rl">Enveloppe nécessaire pour l'objectif</div><div class="rs" id="dirObjSub"></div></div>
+  </div>
+
+  <div class="cles" style="margin-top:18px"><div class="fil"></div>
+    <div class="grid">
+      <div class="cell"><div class="lib">Holding SASU — net dispo / mois</div><div class="val v1" id="dirSasu"></div><div class="sub" id="dirSasuSub"></div></div>
+      <div class="cell"><div class="lib">Holding EURL — net dispo / mois</div><div class="val v2" id="dirEurl"></div><div class="sub" id="dirEurlSub"></div></div>
+    </div>
+  </div>
+
+  <h2>Détail à cette répartition</h2>
+  <div style="overflow-x:auto"><table class="mtab" id="dirDetail"></table></div>
+
+  <h2>Quelle répartition salaire / dividendes ?</h2>
+  <p class="src" style="margin-top:0">Net en poche annuel selon la part versée en rémunération (le reste en dividendes). ★ = optimum de chaque forme.</p>
+  <div style="overflow-x:auto"><table class="mtab" id="dirScan"></table></div>
+
+  <p class="src"><b>Ce que les chiffres ne disent pas :</b> la rémunération SASU cotise pour ta retraite comme un salarié (régime général + complémentaire) et ouvre droit aux indemnités journalières ; la rémunération TNS cotise moins mais protège moins (prévoyance Madelin à prévoir, ~100-200 €/mois). Les dividendes ne créent <b>aucun</b> droit social (ni retraite, ni maladie) et exigent des capitaux propres suffisants. 100 % dividendes = zéro trimestre de retraite validé. Estimation indicative — taux moyens 2026 (cotisations assimilé salarié ~78 % du net, TNS ~43 % du net après réforme de l'assiette) : la décision finale se valide avec l'expert-comptable, notamment pour la holding.</p>
 </div>
 </main>
 <div id="printZone"></div>
@@ -789,9 +848,11 @@ function montagePour(h, cible) {
   const c = (fmd > 0.005 || ppv > 0.005) ? calcOptim(h, ppv, fmd) : base;
   return { h, ppv, fmd, net: c.netAvantImpot, cout: c.coutEmployeur, sup: c.sup };
 }
+// Au-delà de 4,23 h sup/semaine (220 h/an), le contingent conventionnel est dépassé en structurel.
+const horsContingent = (sup) => sup * 52 > 220;
 function meilleurMontage(cible) {
   let best = null;
-  for (let h = 7; h <= 39.001; h += 0.5) {
+  for (let h = 7; h <= 43.001; h += 0.5) {
     const m = montagePour(h, cible);
     if (m && (!best || m.cout < best.cout)) best = m;
   }
@@ -807,9 +868,11 @@ function rendreOptim() {
 
   // --- Meilleures combinaisons pour l'objectif net ---
   const colFmd = !!OP.fmd;
-  const hsTag = (sup) => sup > 0 ? ' <span style="color:var(--orange);font-size:11px">+' + hFmt(sup) + ' HS</span>' : "";
+  const hsTag = (sup) => sup > 0
+    ? ' <span style="color:var(--orange);font-size:11px">+' + hFmt(sup) + ' HS' + (horsContingent(sup) ? ' ⚠️' : '') + '</span>'
+    : "";
   const combos = [];
-  for (let h = 7; h <= 39.001; h += 0.5) {
+  for (let h = 7; h <= 43.001; h += 0.5) {
     const m = montagePour(h, OP.net);
     if (m) combos.push(m);
   }
@@ -820,11 +883,11 @@ function rendreOptim() {
   $("opBest").hidden = combos.length === 0;
   const theadCombos = "<thead><tr><th>H/sem</th>" + (colFmd ? "<th>Forfait mob.</th>" : "") + "<th>PPV / mois</th><th>Net versé</th><th>Coût employeur</th><th>vs n°1</th></tr></thead>";
   if (!combos.length) {
-    const base39 = calcOptim(39, 0, 0);
-    const maxi = calcOptim(39, OP.ppvMax, capFmdMens(base39)).netAvantImpot;
+    const base43 = calcOptim(43, 0, 0);
+    const maxi = calcOptim(43, OP.ppvMax, capFmdMens(base43)).netAvantImpot;
     const mini = calcOptim(7, 0, 0).netAvantImpot;
     $("opAucun").textContent = OP.net > maxi
-      ? "Aucune combinaison n'atteint " + eur(OP.net, 0) + " net avec ce poste : le maximum est " + eur(maxi, 0) + " (39 h + " + eur(OP.ppvMax, 0) + " de PPV" + (colFmd ? " + forfait mobilité" : "") + "). Choisis un échelon supérieur ou baisse l'objectif."
+      ? "Aucune combinaison n'atteint " + eur(OP.net, 0) + " net avec ce poste : le maximum est " + eur(maxi, 0) + " (43 h + " + eur(OP.ppvMax, 0) + " de PPV" + (colFmd ? " + forfait mobilité" : "") + "). Choisis un échelon supérieur ou baisse l'objectif."
       : "Même 7 h/sem sans PPV dépasse déjà l'objectif (" + eur(mini, 0) + " net minimum avec ce poste). Monte l'objectif net.";
     $("opCombosT").innerHTML = "";
   } else {
@@ -834,7 +897,8 @@ function rendreOptim() {
       + (best.fmd > 0.5 ? " + " + eur(best.fmd, 0) + " de forfait mobilité" : "")
       + (best.ppv > 0.5 ? " + " + eur(best.ppv, 0) + " de PPV" : "")
       + " → " + eur(best.net, 0) + " net · " + eur(best.cout * 12, 0) + "/an"
-      + (best.sup > 0 ? " · " + hFmt(best.sup) + " HS/sem incluses" : "");
+      + (best.sup > 0 ? " · " + hFmt(best.sup) + " HS/sem incluses" : "")
+      + (horsContingent(best.sup) ? " ⚠️ dépasse le contingent de 220 h sup/an en structurel" : "");
     $("opCombosT").innerHTML = theadCombos + "<tbody>" + top.map((c, i) => {
       const style = i === 0 ? ' style="background:#eef5ec;font-weight:700"' : "";
       return "<tr" + style + "><td>" + hFmt(c.h) + " h" + hsTag(c.sup) + "</td>"
@@ -845,8 +909,8 @@ function rendreOptim() {
   }
 
   // --- Frontière : montage optimal par niveau de net (à partir de 1 200 €) ---
-  const base39f = calcOptim(39, 0, 0);
-  const netMax = calcOptim(39, OP.ppvMax, capFmdMens(base39f)).netAvantImpot;
+  const base43f = calcOptim(43, 0, 0);
+  const netMax = calcOptim(43, OP.ppvMax, capFmdMens(base43f)).netAvantImpot;
   const pas = (netMax - 1200) > 1300 ? 200 : 100;
   const cibles = [];
   for (let n = 1200; n <= netMax; n += pas) cibles.push(n);
@@ -864,7 +928,7 @@ function rendreOptim() {
   }).join("") || '<tr><td colspan="6">Aucun montage possible entre 1 200 € net et le maximum de ce poste.</td></tr>') + "</tbody>";
 
   // --- Matrice heures × PPV ---
-  const heuresListe = [10, 12.5, 15, 17.5, 20, 25, 30, 35, 37, 39];
+  const heuresListe = [10, 12.5, 15, 17.5, 20, 25, 30, 35, 37, 39, 41, 43];
   const ppvListe = [0, 50, 100, 150, 200, 250].filter(v => v === 0 || v <= OP.ppvMax);
   const cells = heuresListe.map(h => ppvListe.map(ppv => {
     const c = calcOptim(h, ppv);
@@ -878,7 +942,7 @@ function rendreOptim() {
   };
   let m = "<thead><tr><th>H/sem \\ PPV</th>" + ppvListe.map(p => "<th>" + eur(p, 0) + "</th>").join("") + "</tr></thead><tbody>";
   heuresListe.forEach((h, i) => {
-    m += "<tr><td><b>" + hFmt(h) + " h</b></td>" + ppvListe.map((p, j) => {
+    m += "<tr><td><b>" + hFmt(h) + " h</b>" + (horsContingent(Math.max(0, h - 35)) ? " ⚠️" : "") + "</td>" + ppvListe.map((p, j) => {
       const c = cells[i][j];
       return '<td style="background:' + teinte(c.ratio) + '"><b>' + eur(c.cout, 0) + '</b><br><span style="font-size:11px;color:var(--gris)">' + eur(c.net, 0) + ' net</span></td>';
     }).join("") + "</tr>";
@@ -903,10 +967,229 @@ document.querySelectorAll(".tab").forEach(t => {
     $("panel-salaire").hidden = name !== "salaire";
     $("panel-optim").hidden = name !== "optim";
     $("panel-equipe").hidden = name !== "equipe";
+    $("panel-dir").hidden = name !== "dir";
     if (name === "equipe") rendreEquipe();
     if (name === "optim") rendreOptim();
+    if (name === "dir") rendreDir();
   };
 });
+
+// ============ ONGLET DIRIGEANT ============
+const DIR = { env: 150000, remPct: 50, cap: 400000, parts: 2.5, autres: 0, es: 0, per: 0, cesu: 0, cca: 0, obj: 0, remontee: false, integ: true, r1: 80000, r2: 80000 };
+const isc = (b) => Math.min(Math.max(0, b), 42500) * 0.15 + Math.max(0, b - 42500) * 0.25;
+try { const o = JSON.parse(localStorage.getItem("paie-dirigeant") || "null"); if (o) Object.assign(DIR, o); } catch (e) {}
+function sauverDir() { try { localStorage.setItem("paie-dirigeant", JSON.stringify(DIR)); } catch (e) {} }
+
+// Barème IR 2026 (revenus 2025, LF 2026 : revalorisation 0,9 %) ; QF plafonné à ~1 807 € par demi-part au-delà de 2 parts.
+const IR_TRANCHES = [[11600, 0], [29579, 0.11], [84577, 0.30], [181917, 0.41], [Infinity, 0.45]];
+function irBareme(rni, parts) {
+  const brut = (r, p) => { let ir = 0, prev = 0; const q = Math.max(0, r) / p; for (const [max, tx] of IR_TRANCHES) { ir += Math.max(0, Math.min(q, max) - prev) * tx; prev = max; if (q <= max) break; } return ir * p; };
+  const ref = Math.min(parts, 2);
+  const ir = brut(rni, parts);
+  if (parts > ref) return Math.max(ir, brut(rni, ref) - (parts - ref) * 2 * 1807);
+  return ir;
+}
+
+// SASU assimilé salarié : ~40 % patronal / 22 % salarial T1 (PMSS 48 060 €/an), ~36 % / 23 % T2 — sans chômage ni AGS.
+// EURL TNS (réforme 2026, abattement d'assiette 26 %) : cotisations ≈ 30 % de l'enveloppe, minimum ≈ 1 300 €/an.
+// Dividendes : IS 15 %/25 % puis PFU 31,4 % OU option barème (abattement 40 % + PS 18,6 %) — l'outil prend le plus favorable.
+// EURL : fraction > 10 % du capital soumise aux cotisations TNS (~30 %) au lieu des PS.
+function dirCalc(forme, envRem, envDiv, isExt) {
+  const PMSSA = 48060;
+  let brut = 0, netRem = 0, cotis = 0;
+  if (forme === "SASU") {
+    brut = envRem / 1.40;
+    if (brut > PMSSA) brut = (envRem - PMSSA * 0.04) / 1.36;
+    const t1 = Math.min(brut, PMSSA), t2 = Math.max(0, brut - PMSSA);
+    netRem = t1 * 0.78 + t2 * 0.77;
+    cotis = envRem - netRem;
+  } else {
+    cotis = envRem > 0 ? Math.max(envRem * 0.30, Math.min(envRem, 1300)) : 0;
+    netRem = envRem - cotis;
+  }
+  // isExt != null : mode remontée — l'IS a déjà été payé (filles ou groupe), envDiv est déjà net d'IS.
+  const is = isExt != null ? isExt : isc(envDiv);
+  const divBrut = isExt != null ? envDiv : envDiv - is;
+  let sous = divBrut, sur = 0, cotisDiv = 0;
+  if (forme === "EURL") {
+    const seuil = DIR.cap * 0.10;
+    sous = Math.min(divBrut, seuil); sur = Math.max(0, divBrut - seuil);
+    cotisDiv = sur * 0.30;
+  }
+  const ccaInt = DIR.cca * 0.0433;
+  const ccaNet = ccaInt * (1 - 0.314);
+  const imposableRem = Math.max(0, netRem - Math.min(netRem * 0.10, 14426) - DIR.per);
+  const baseFoyer = imposableRem + DIR.autres;
+  const irAutres = irBareme(DIR.autres, DIR.parts);
+  // Option 1 — PFU sur les dividendes (12,8 % IR + 18,6 % PS ; fraction TNS : 12,8 % IR + cotisations déjà comptées)
+  const irPFU = irBareme(baseFoyer, DIR.parts) + sous * 0.314 + Math.max(0, sur - cotisDiv) * 0.128;
+  // Option 2 — barème sur les dividendes (abattement 40 %, PS 18,6 % sur la part hors TNS)
+  const irBar = irBareme(baseFoyer + (sous + Math.max(0, sur - cotisDiv)) * 0.60, DIR.parts) + sous * 0.186;
+  const optionBareme = irBar < irPFU;
+  const divNet = sous + Math.max(0, sur - cotisDiv) - (optionBareme ? (irBar - irBareme(baseFoyer, DIR.parts)) : (sous * 0.314 + Math.max(0, sur - cotisDiv) * 0.128));
+  const irRemPart = Math.max(0, irBareme(baseFoyer, DIR.parts) - irAutres);
+  const cash = netRem - DIR.per + divNet + ccaNet + DIR.cesu - irRemPart;
+  const bloque = DIR.es * 0.903 + DIR.per;
+  return { brut, netRem, cotis, is, divBrut, cotisDiv, divNet, ccaInt, ccaNet, optionBareme, irRemPart, cash, bloque, total: cash + bloque };
+}
+
+function dirEnvLeviers() { return DIR.es + DIR.cesu + DIR.cca * 0.0433; }
+
+// Flux : de l'enveloppe (ou des résultats des restos remontés via la holding) vers les deux poches rému / dividendes.
+function dirFlux(remPct, envInput) {
+  const L = dirEnvLeviers();
+  if (!DIR.remontee) {
+    const envAff = envInput != null ? envInput : DIR.env;
+    const envTotal = Math.max(0, envAff - L);
+    const envRem = envTotal * remPct / 100;
+    return { envAff, envRem, envDiv: envTotal - envRem, isExt: null, qp: 0 };
+  }
+  const P = envInput != null ? envInput : (DIR.r1 + DIR.r2);
+  const envRem = Math.max(0, P - L) * remPct / 100;
+  if (DIR.integ) {
+    // Intégration fiscale : rémunération et leviers déductibles du résultat du groupe, un seul seuil d'IS à 15 %.
+    const isTot = isc(Math.max(0, P - envRem - L));
+    const divPool = Math.max(0, P - envRem - L - isTot);
+    const qp = divPool * 0.01 * 0.25; // quote-part de frais 1 % taxée à l'IS
+    return { envAff: P, envRem, envDiv: Math.max(0, divPool - qp), isExt: isTot, qp };
+  }
+  // Sans intégration : IS payé par chaque resto (deux seuils à 15 %), remontée mère-fille (quote-part 5 %),
+  // puis rémunération et leviers payés par la holding SANS déduction (déficit perdu).
+  const tot = DIR.r1 + DIR.r2, ratio = tot > 0 ? P / tot : 1;
+  const isTot = isc(DIR.r1 * ratio) + isc(DIR.r2 * ratio);
+  const qp = Math.max(0, P - isTot) * 0.05 * 0.15;
+  const dispo = Math.max(0, P - isTot - qp);
+  const envRemEff = Math.min(envRem, dispo);
+  return { envAff: P, envRem: envRemEff, envDiv: Math.max(0, dispo - envRemEff - L), isExt: isTot, qp, horsDeduc: true };
+}
+
+function rendreDir() {
+  $("dirRemonteeWrap").hidden = !DIR.remontee;
+  $("dirRemonteeNote").hidden = !DIR.remontee;
+  $("dirEnv").disabled = DIR.remontee;
+  if (DIR.remontee) $("dirEnv").value = DIR.r1 + DIR.r2;
+  const F = dirFlux(DIR.remPct, null);
+  const envRem = F.envRem, envDiv = F.envDiv;
+  const S = dirCalc("SASU", envRem, envDiv, F.isExt), U = dirCalc("EURL", envRem, envDiv, F.isExt);
+  DIR.env = F.envAff;
+
+  $("dirSasu").textContent = eur(S.cash / 12, 0);
+  $("dirSasuSub").textContent = eur(S.cash, 0) + "/an en cash" + (S.bloque > 0 ? " + " + eur(S.bloque, 0) + " épargnés" : "") + " · " + ((S.total) / DIR.env * 100).toFixed(0) + " % de l'enveloppe";
+  $("dirEurl").textContent = eur(U.cash / 12, 0);
+  $("dirEurlSub").textContent = eur(U.cash, 0) + "/an en cash" + (U.bloque > 0 ? " + " + eur(U.bloque, 0) + " épargnés" : "") + " · " + ((U.total) / DIR.env * 100).toFixed(0) + " % de l'enveloppe";
+
+  // Alertes plafonds
+  const al = [];
+  if (DIR.es > 47580) al.push("Épargne salariale au-delà des plafonds cumulés (47 580 €/an : intéressement 36 045 + PEE 3 845 + PERECO 7 690).");
+  if (DIR.cesu > 2540) al.push("CESU au-delà du plafond exonéré (2 540 €/an) — l'excédent serait requalifié.");
+  if (DIR.per > Math.max(4710, (S.netRem) * 0.10)) al.push("PER probablement au-delà du plafond déductible (~10 % des revenus professionnels).");
+  if (DIR.remontee && !DIR.integ && envRem + dirEnvLeviers() > 0) al.push("Sans intégration fiscale, la rémunération et les leviers versés par la holding sont payés sur un résultat déjà imposé (déficit holding perdu) : le montage rémunération y est fortement pénalisé.");
+  $("dirAlertes").hidden = !al.length;
+  $("dirAlertes").textContent = al.length ? "⚠️ " + al.join(" ") : "";
+
+  const tr2 = (lib, a, b, cls) => "<tr" + (cls ? ' class="' + cls + '"' : "") + "><td>" + lib + "</td><td>" + eur(a, 0) + "</td><td>" + eur(b, 0) + "</td></tr>";
+  let d = "<thead><tr><th></th><th>Holding SASU</th><th>Holding EURL</th></tr></thead><tbody>";
+  if (DIR.remontee) d += tr2("Résultat des restos avant IS", F.envAff, F.envAff);
+  d += tr2("Enveloppe rémunération" + (F.horsDeduc ? " (non déductible ⚠️)" : ""), envRem, envRem);
+  d += tr2("Cotisations sociales", -S.cotis, -U.cotis);
+  d += tr2("Rémunération nette (avant IR)", S.netRem, U.netRem);
+  d += tr2(DIR.remontee ? "Dividendes distribuables (après IS)" : "Enveloppe dividendes", envDiv, envDiv);
+  d += tr2(DIR.remontee ? (DIR.integ ? "IS du groupe intégré (un seul seuil à 15 %)" : "IS payé par les restos (un seuil à 15 % chacun)") : "IS (15 % ≤ 42 500 €, puis 25 %)", -S.is, -U.is);
+  if (F.qp > 0) d += tr2("Quote-part de frais mère-fille (" + (DIR.integ ? "1 %" : "5 %") + ")", -F.qp, -F.qp);
+  if (U.cotisDiv > 0) d += tr2("Cotisations TNS sur dividendes > 10 % du capital (40 000 €)", 0, -U.cotisDiv);
+  d += tr2("Dividendes nets d'impôts (" + (S.optionBareme ? "barème" : "flat tax") + " / " + (U.optionBareme ? "barème" : "flat tax") + ")", S.divNet, U.divNet);
+  d += tr2("IR sur la rémunération (barème réel, " + DIR.parts.toLocaleString("fr-FR") + " parts)", -S.irRemPart, -U.irRemPart);
+  if (DIR.cca > 0) d += tr2("Intérêts de compte courant nets (4,33 %, flat tax)", S.ccaNet, U.ccaNet);
+  if (DIR.cesu > 0) d += tr2("CESU préfinancé (0 charge, 0 IR)", DIR.cesu, DIR.cesu);
+  if (DIR.per > 0) d += tr2("PER versé (déduit de l'imposable, bloqué)", -DIR.per, -DIR.per);
+  d += tr2("Cash disponible / an", S.cash, U.cash, "tot");
+  d += tr2("Cash disponible / mois", S.cash / 12, U.cash / 12, "tot");
+  if (S.bloque > 0) d += tr2("Épargne long terme (PEE net de CSG + PER)", S.bloque, U.bloque);
+  $("dirDetail").innerHTML = d + "</tbody>";
+
+  // Scan répartition
+  let bestS = { v: -1 }, bestU = { v: -1 };
+  const lignes = [];
+  for (let pc = 0; pc <= 100; pc += 10) {
+    const f = dirFlux(pc, null);
+    const s = dirCalc("SASU", f.envRem, f.envDiv, f.isExt), u = dirCalc("EURL", f.envRem, f.envDiv, f.isExt);
+    if (s.cash > bestS.v) bestS = { v: s.cash, pc };
+    if (u.cash > bestU.v) bestU = { v: u.cash, pc };
+    lignes.push({ pc, s: s.cash, u: u.cash });
+  }
+  let sc = "<thead><tr><th>Part rémunération</th><th>SASU — cash/mois</th><th>EURL — cash/mois</th></tr></thead><tbody>";
+  lignes.forEach(l => {
+    const sStar = l.pc === bestS.pc, uStar = l.pc === bestU.pc;
+    sc += "<tr" + ((sStar || uStar) ? ' style="background:#eef5ec"' : "") + "><td>" + l.pc + " %</td><td>" + (sStar ? "★ " : "") + eur(l.s / 12, 0) + "</td><td>" + (uStar ? "★ " : "") + eur(l.u / 12, 0) + "</td></tr>";
+  });
+  $("dirScan").innerHTML = sc + "</tbody>";
+
+  // Objectif net mensuel : enveloppe nécessaire au mix optimal de chaque forme
+  $("dirObjCard").hidden = !(DIR.obj > 0);
+  if (DIR.obj > 0) {
+    const chercher = (forme) => {
+      const cashMax = (env) => { let m = -1; for (let pc = 0; pc <= 100; pc += 5) { const f = dirFlux(pc, env); const c = dirCalc(forme, f.envRem, f.envDiv, f.isExt); if (c.cash > m) m = c.cash; } return m / 12; };
+      let lo = 0, hi = 1500000;
+      for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; (cashMax(m) < DIR.obj) ? lo = m : hi = m; }
+      return lo;
+    };
+    const envS = chercher("SASU"), envU = chercher("EURL");
+    const unite = DIR.remontee ? " de résultat avant IS des restos" : " d'enveloppe";
+    $("dirObjVal").textContent = eur(Math.min(envS, envU), 0);
+    $("dirObjSub").textContent = "pour " + eur(DIR.obj, 0) + "/mois de cash : " + eur(envU, 0) + "/an en EURL · " + eur(envS, 0) + "/an en SASU" + unite + " (au mix optimal, leviers inclus)";
+  }
+}
+
+[["dirEnv","env"],["dirRem","remPct"],["dirCap","cap"],["dirAutres","autres"],["dirES","es"],["dirPER","per"],["dirCESU","cesu"],["dirCCA","cca"],["dirObj","obj"]].forEach(([id,cle]) => {
+  $(id).value = DIR[cle];
+  $(id).oninput = () => { DIR[cle] = Math.max(0, parseFloat($(id).value) || 0); if (cle === "remPct") DIR[cle] = Math.min(100, DIR[cle]); sauverDir(); rendreDir(); };
+});
+$("dirParts").value = DIR.parts;
+$("dirParts").onchange = () => { DIR.parts = parseFloat($("dirParts").value) || 2; sauverDir(); rendreDir(); };
+[["dirR1","r1"],["dirR2","r2"]].forEach(([id,cle]) => {
+  $(id).value = DIR[cle];
+  $(id).oninput = () => { DIR[cle] = Math.max(0, parseFloat($(id).value) || 0); sauverDir(); rendreDir(); };
+});
+$("dirRemontee").checked = DIR.remontee;
+$("dirRemontee").onchange = () => { DIR.remontee = $("dirRemontee").checked; sauverDir(); rendreDir(); };
+$("dirInteg").checked = DIR.integ;
+$("dirInteg").onchange = () => { DIR.integ = $("dirInteg").checked; sauverDir(); rendreDir(); };
+
+// Récupération du réel comptable depuis la base du Pilotage (cr_lignes : balance Pennylane par site × mois × compte).
+// Clé anonyme publique de la base Dashboard — la même que celle embarquée dans le Pilotage côté client.
+const DASH_SB = "https://txizebrslijdumfdcaby.supabase.co";
+const DASH_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4aXplYnJzbGlqZHVtZmRjYWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTY0MTUsImV4cCI6MjA5NjY5MjQxNX0.CCiXd3ISsE5spuuzOAM-PZ9ptCVJXdVwcqCHFfUuZ3E";
+$("dirSync").onclick = async () => {
+  $("dirSync").disabled = true; $("dirSync").textContent = "Récupération…";
+  try {
+    const now = new Date();
+    const cur = now.toISOString().slice(0, 7);
+    const dep = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString().slice(0, 7);
+    const r = await fetch(DASH_SB + "/rest/v1/cr_lignes?select=site_id,mois,compte,montant&mois=gte." + dep + "&mois=lt." + cur + "&limit=100000",
+      { headers: { apikey: DASH_KEY, Authorization: "Bearer " + DASH_KEY } });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const lignes = await r.json();
+    const agg = {};
+    for (const l of lignes) {
+      const c = String(l.compte || "");
+      if (!agg[l.site_id]) agg[l.site_id] = { mois: new Set(), res: 0 };
+      if (c.startsWith("7")) { agg[l.site_id].res += +l.montant; agg[l.site_id].mois.add(l.mois); }
+      else if (c.startsWith("6") && !c.startsWith("69")) { agg[l.site_id].res -= +l.montant; agg[l.site_id].mois.add(l.mois); }
+    }
+    if (!agg.cd9 && !agg.lb8) throw new Error("aucune ligne comptable");
+    const annualise = (a) => a && a.mois.size ? Math.round(a.res * 12 / a.mois.size) : 0;
+    const r1 = annualise(agg.cd9), r2 = annualise(agg.lb8);
+    DIR.r1 = Math.max(0, r1); DIR.r2 = Math.max(0, r2); DIR.remontee = true;
+    $("dirR1").value = DIR.r1; $("dirR2").value = DIR.r2; $("dirRemontee").checked = true;
+    $("dirSyncInfo").hidden = false;
+    $("dirSyncInfo").textContent = "Réel comptable du Pilotage, annualisé (mois en cours exclu — " + (agg.cd9 ? agg.cd9.mois.size : 0) + " mois Châteaudun, " + (agg.lb8 ? agg.lb8.mois.size : 0) + " mois Laborde) : Châteaudun " + eur(r1, 0) + (r1 < 0 ? " (perte, ramenée à 0)" : "") + " · Laborde " + eur(r2, 0) + (r2 < 0 ? " (perte, ramenée à 0)" : "") + ". Résultat avant IS, avant ta future rémunération et avant les changements d'équipe — ajuste à la main si besoin.";
+    sauverDir(); rendreDir();
+  } catch (e) {
+    $("dirSyncInfo").hidden = false;
+    $("dirSyncInfo").textContent = "⚠️ Impossible de lire la base du Pilotage (" + e.message + "). Saisis les résultats à la main.";
+  }
+  $("dirSync").disabled = false; $("dirSync").textContent = "↺ Récupérer depuis le Pilotage";
+};
 
 rendre();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
