@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260830-0010 -->
+<!-- v20260830-0045 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -310,8 +310,10 @@
     <div><label class="txt">Résultat avant IS — Châteaudun (€/an)</label><input type="number" id="dirR1" step="5000" min="0" style="width:105px"></div>
     <div><label class="txt">Résultat avant IS — Laborde (€/an)</label><input type="number" id="dirR2" step="5000" min="0" style="width:105px"></div>
     <button class="btn-add" id="dirSync" type="button" style="margin-top:0">↺ Récupérer depuis le Pilotage</button>
+    <div><label class="txt">Prestations facturées par la holding (€/an)</label><input type="number" id="dirFees" step="5000" min="0" style="width:105px"></div>
   </div>
   <p class="src" id="dirSyncInfo" hidden></p>
+  <p class="src" id="dirFeesNote" hidden>⚠️ <b>Facturation holding → restos</b> : uniquement pour des <b>prestations réelles et distinctes du mandat social</b> (compta, RH, achats, marketing…), avec convention écrite et prix de marché — la Cour de cassation (juin 2026) requalifie les management fees qui rémunèrent la fonction de dirigeant. <b>En intégration fiscale, cette facturation est fiscalement neutre</b> (même résultat de groupe) : son intérêt est ailleurs (trésorerie régulière de la holding sans attendre les dividendes). <b>Hors intégration</b>, elle rend ta rémunération déductible chez la holding à hauteur des prestations facturées, et la holding dispose de son propre tronçon d'IS à 15 %.</p>
   <p class="src" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu.</p>
   <div class="rang" style="margin-top:12px">
     <div><label class="txt">Enveloppe annuelle (€, avant IS)</label><input type="number" id="dirEnv" step="5000" min="0" style="width:110px"></div>
@@ -975,7 +977,7 @@ document.querySelectorAll(".tab").forEach(t => {
 });
 
 // ============ ONGLET DIRIGEANT ============
-const DIR = { env: 150000, remPct: 50, cap: 400000, parts: 2.5, autres: 0, es: 0, per: 0, cesu: 0, cca: 0, obj: 0, remontee: false, integ: true, r1: 80000, r2: 80000 };
+const DIR = { env: 150000, remPct: 50, cap: 400000, parts: 2.5, autres: 0, es: 0, per: 0, cesu: 0, cca: 0, obj: 0, remontee: false, integ: true, r1: 80000, r2: 80000, fees: 0 };
 const isc = (b) => Math.min(Math.max(0, b), 42500) * 0.15 + Math.max(0, b - 42500) * 0.25;
 try { const o = JSON.parse(localStorage.getItem("paie-dirigeant") || "null"); if (o) Object.assign(DIR, o); } catch (e) {}
 function sauverDir() { try { localStorage.setItem("paie-dirigeant", JSON.stringify(DIR)); } catch (e) {} }
@@ -1053,19 +1055,25 @@ function dirFlux(remPct, envInput) {
     const qp = divPool * 0.01 * 0.25; // quote-part de frais 1 % taxée à l'IS
     return { envAff: P, envRem, envDiv: Math.max(0, divPool - qp), isExt: isTot, qp };
   }
-  // Sans intégration : IS payé par chaque resto (deux seuils à 15 %), remontée mère-fille (quote-part 5 %),
-  // puis rémunération et leviers payés par la holding SANS déduction (déficit perdu).
+  // Sans intégration : IS payé par chaque resto (un tronçon à 15 % chacun), remontée mère-fille (quote-part 5 %).
+  // Les prestations facturées par la holding déplacent du résultat vers elle : la rémunération y devient
+  // déductible à hauteur des prestations, et la holding a son propre tronçon d'IS à 15 %.
   const tot = DIR.r1 + DIR.r2, ratio = tot > 0 ? P / tot : 1;
-  const isTot = isc(DIR.r1 * ratio) + isc(DIR.r2 * ratio);
-  const qp = Math.max(0, P - isTot) * 0.05 * 0.15;
-  const dispo = Math.max(0, P - isTot - qp);
+  const F = Math.min(DIR.fees || 0, P);
+  const f1 = tot > 0 ? F * DIR.r1 / tot : F / 2, f2 = F - f1;
+  const isFilles = isc(Math.max(0, DIR.r1 - f1) * ratio) + isc(Math.max(0, DIR.r2 - f2) * ratio);
+  const brutRemontee = Math.max(0, P - F - isFilles);
+  const qp = brutRemontee * 0.05 * 0.15;
+  const isHold = isc(Math.max(0, F - envRem - L));
+  const dispo = Math.max(0, brutRemontee - qp + F - isHold);
   const envRemEff = Math.min(envRem, dispo);
-  return { envAff: P, envRem: envRemEff, envDiv: Math.max(0, dispo - envRemEff - L), isExt: isTot, qp, horsDeduc: true };
+  return { envAff: P, envRem: envRemEff, envDiv: Math.max(0, dispo - envRemEff - L), isExt: isFilles + isHold, qp, horsDeduc: envRem + L > F + 0.01, fees: F };
 }
 
 function rendreDir() {
   $("dirRemonteeWrap").hidden = !DIR.remontee;
   $("dirRemonteeNote").hidden = !DIR.remontee;
+  $("dirFeesNote").hidden = !(DIR.remontee && DIR.fees > 0);
   $("dirEnv").disabled = DIR.remontee;
   if (DIR.remontee) $("dirEnv").value = DIR.r1 + DIR.r2;
   const F = dirFlux(DIR.remPct, null);
@@ -1083,18 +1091,19 @@ function rendreDir() {
   if (DIR.es > 47580) al.push("Épargne salariale au-delà des plafonds cumulés (47 580 €/an : intéressement 36 045 + PEE 3 845 + PERECO 7 690).");
   if (DIR.cesu > 2540) al.push("CESU au-delà du plafond exonéré (2 540 €/an) — l'excédent serait requalifié.");
   if (DIR.per > Math.max(4710, (S.netRem) * 0.10)) al.push("PER probablement au-delà du plafond déductible (~10 % des revenus professionnels).");
-  if (DIR.remontee && !DIR.integ && envRem + dirEnvLeviers() > 0) al.push("Sans intégration fiscale, la rémunération et les leviers versés par la holding sont payés sur un résultat déjà imposé (déficit holding perdu) : le montage rémunération y est fortement pénalisé.");
+  if (DIR.remontee && !DIR.integ && F.horsDeduc) al.push("Sans intégration fiscale, la part de rémunération et de leviers qui dépasse les prestations facturées par la holding est payée sur un résultat déjà imposé (déficit holding perdu). Augmente les prestations facturées (si elles sont réelles) ou opte pour l'intégration fiscale.");
   $("dirAlertes").hidden = !al.length;
   $("dirAlertes").textContent = al.length ? "⚠️ " + al.join(" ") : "";
 
   const tr2 = (lib, a, b, cls) => "<tr" + (cls ? ' class="' + cls + '"' : "") + "><td>" + lib + "</td><td>" + eur(a, 0) + "</td><td>" + eur(b, 0) + "</td></tr>";
   let d = "<thead><tr><th></th><th>Holding SASU</th><th>Holding EURL</th></tr></thead><tbody>";
   if (DIR.remontee) d += tr2("Résultat des restos avant IS", F.envAff, F.envAff);
+  if (DIR.remontee && F.fees > 0) d += tr2("Prestations facturées par la holding" + (DIR.integ ? " (neutre en intégration)" : ""), F.fees, F.fees);
   d += tr2("Enveloppe rémunération" + (F.horsDeduc ? " (non déductible ⚠️)" : ""), envRem, envRem);
   d += tr2("Cotisations sociales", -S.cotis, -U.cotis);
   d += tr2("Rémunération nette (avant IR)", S.netRem, U.netRem);
   d += tr2(DIR.remontee ? "Dividendes distribuables (après IS)" : "Enveloppe dividendes", envDiv, envDiv);
-  d += tr2(DIR.remontee ? (DIR.integ ? "IS du groupe intégré (un seul seuil à 15 %)" : "IS payé par les restos (un seuil à 15 % chacun)") : "IS (15 % ≤ 42 500 €, puis 25 %)", -S.is, -U.is);
+  d += tr2(DIR.remontee ? (DIR.integ ? "IS du groupe intégré — 15 % ≤ 42 500 € puis 25 % (un seul tronçon à 15 % pour tout le groupe)" : "IS payé par les restos — 15 % ≤ 42 500 € puis 25 % (un tronçon à 15 % par société)") : "IS (15 % ≤ 42 500 €, puis 25 %)", -S.is, -U.is);
   if (F.qp > 0) d += tr2("Quote-part de frais mère-fille (" + (DIR.integ ? "1 %" : "5 %") + ")", -F.qp, -F.qp);
   if (U.cotisDiv > 0) d += tr2("Cotisations TNS sur dividendes > 10 % du capital (40 000 €)", 0, -U.cotisDiv);
   d += tr2("Dividendes nets d'impôts (" + (S.optionBareme ? "barème" : "flat tax") + " / " + (U.optionBareme ? "barème" : "flat tax") + ")", S.divNet, U.divNet);
@@ -1146,7 +1155,7 @@ function rendreDir() {
 });
 $("dirParts").value = DIR.parts;
 $("dirParts").onchange = () => { DIR.parts = parseFloat($("dirParts").value) || 2; sauverDir(); rendreDir(); };
-[["dirR1","r1"],["dirR2","r2"]].forEach(([id,cle]) => {
+[["dirR1","r1"],["dirR2","r2"],["dirFees","fees"]].forEach(([id,cle]) => {
   $(id).value = DIR[cle];
   $(id).oninput = () => { DIR[cle] = Math.max(0, parseFloat($(id).value) || 0); sauverDir(); rendreDir(); };
 });
