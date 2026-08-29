@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- v20260808-1454 -->
+<!-- v20260829-2125 -->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -134,6 +134,7 @@
 </header>
 <nav class="tabs">
   <div class="tab on" data-tab="salaire">Salaire d'un poste</div>
+  <div class="tab" data-tab="optim">Heures × PPV</div>
   <div class="tab" data-tab="equipe">Masse salariale équipe</div>
 </nav>
 <main>
@@ -180,8 +181,10 @@
       </div>
       <div class="rang">
         <div><label class="txt">PPV / mois (exonérée)</label><input type="number" id="ppvMens" step="10" min="0" style="width:90px"></div>
+        <div><label class="txt">Forfait mobilité / mois (exonéré)</label><input type="number" id="fmdMens" step="5" min="0" style="width:90px"></div>
       </div>
       <p class="note-i" id="notePPV" hidden></p>
+      <p class="note-i" id="noteFMD" hidden></p>
       <div class="rang">
         <label class="check"><input type="checkbox" id="comparer"> Comparer avec un contrat B</label>
       </div>
@@ -225,6 +228,41 @@
   </details>
 </div>
 
+<div id="panel-optim" hidden>
+  <p class="note-i">Choisis un poste et un <b>objectif de net mensuel</b> : pour chaque durée de contrat, le calculateur détermine la PPV exacte qui atteint ce net, puis classe les combinaisons <b>de la moins chère à la plus chère</b> en coût employeur. La matrice en dessous donne la vue d'ensemble heures × PPV.</p>
+
+  <label class="txt" for="opPoste">Poste — grille conventionnelle</label>
+  <select id="opPoste"></select>
+  <div class="rang" style="margin-top:10px">
+    <div><label class="txt">Objectif net / mois (€)</label><input type="number" id="opNet" step="25" min="0" style="width:110px"></div>
+    <div><label class="txt">PPV max / mois (€)</label><input type="number" id="opPpvMax" step="10" min="0" style="width:90px"></div>
+  </div>
+  <div class="rang">
+    <label class="check"><input type="checkbox" id="opRepas"> Repas fourni</label>
+    <label class="check"><input type="checkbox" id="opNavigo"> Navigo 50 %</label>
+    <label class="check"><input type="checkbox" id="opFmd"> Forfait mobilité (levier prioritaire)</label>
+    <div><label class="txt">Jours repas / mois (à 35 h)</label><input type="number" id="opJours" step="1" min="1" max="26" style="width:70px"></div>
+  </div>
+  <p class="src">PPV exonérée dans la limite de 3 000 €/an (250 €/mois lissés) et versée au maximum une fois par trimestre. Elle est réintégrée dans le calcul de la réduction générale (RGDU) : le classement en tient compte. Si la case « Forfait mobilité » est cochée, l'optimiseur le remplit en priorité (0 cotisation, 0 effet RGDU) dans la limite exonérée — 600 €/an, ou 900 €/an moins le Navigo remboursé — avant de compléter en PPV. Réservé aux salariés venant à vélo, covoiturage ou trottinette (attestation à conserver). Jours de repas proratisés pour les temps partiels.</p>
+
+  <div class="ratiocard" id="opBest" hidden style="border-left-color:var(--vert)">
+    <div><div class="rv" id="opBestVal" style="color:var(--vert)"></div></div>
+    <div><div class="rl">Combinaison la moins chère</div><div class="rs" id="opBestSub"></div></div>
+  </div>
+
+  <h2>Meilleures combinaisons</h2>
+  <div style="overflow-x:auto"><table class="mtab" id="opCombosT"></table></div>
+  <p class="src" id="opAucun" hidden></p>
+
+  <h2>Montage optimal par niveau de net</h2>
+  <p class="src" style="margin-top:0">Pour chaque net visé (à partir de 1 200 €), le montage <b>le moins cher</b>. La colonne « rendement » donne le coût employeur pour 1 € net versé : la ligne ★ est celle où ton euro rapporte le plus.</p>
+  <div style="overflow-x:auto"><table class="mtab" id="opFrontT"></table></div>
+
+  <h2>Matrice coût employeur — heures × PPV</h2>
+  <div style="overflow-x:auto"><table class="mtab" id="opMatrice"></table></div>
+  <p class="src">Chaque case : <b>coût employeur mensuel</b> et, en dessous, le net versé. Couleur = coût pour 1 € net versé (vert = efficace, orange = cher). Au-delà de 35 h, les heures supplémentaires majorées sont comptées automatiquement. Jours de repas au prorata des heures.</p>
+</div>
+
 <div id="panel-equipe" hidden>
   <p class="note-i">Compose ton équipe : choisis le poste (niveau &amp; échelon), les heures hebdo et le nombre de personnes. La masse salariale est ventilée <b>brut + charges patronales</b> (réduction générale RGDU 2026 déduite), sur la semaine, le mois et l'année.</p>
 
@@ -234,8 +272,9 @@
     <div><label class="txt">CA mensuel HT (€)</label><input type="number" id="eqCA" step="500" min="0" placeholder="ex. 45000" style="width:120px"></div>
   </div>
 
-  <div class="entetes" style="padding-bottom:6px"><span style="flex:1">Poste · h/sem · effectif</span><span style="min-width:78px;text-align:right">Coût / mois</span></div>
+  <div class="entetes" style="padding-bottom:6px"><span style="flex:1">Poste · h/sem · effectif · PPV · forfait mobilité</span><span style="min-width:78px;text-align:right">Coût / mois</span></div>
   <div id="eqlist"></div>
+  <div id="eqAlertes" style="margin-top:10px"></div>
   <button class="btn-add" id="eqAdd" type="button">+ Ajouter un poste</button>
 
   <div class="cles" style="margin-top:22px"><div class="fil"></div>
@@ -255,7 +294,7 @@
     <thead><tr><th>Période</th><th>Brut</th><th>Charges patron.</th><th>Total</th></tr></thead>
     <tbody id="eqBody"></tbody>
   </table>
-  <p class="src">Toute durée saisie <b>au-delà de 35 h/sem</b> est automatiquement comptée en heures supplémentaires (+25 % jusqu'à 43 h, +50 % au-delà) — signalées par un badge « +n HS ». Brut = brut soumis à cotisations (salaire + heures supp. majorées + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo, moins la déduction forfaitaire sur heures supp. Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
+  <p class="src">Toute durée saisie <b>au-delà de 35 h/sem</b> est automatiquement comptée en heures supplémentaires (+25 % jusqu'à 43 h, +50 % au-delà) — signalées par un badge « +n HS ». Brut = brut soumis à cotisations (salaire + heures supp. majorées + avantage repas éventuel). Charges patronales = cotisations patronales 2026 nettes de la réduction générale (RGDU) + mutuelle Alan part employeur + remboursement Navigo + PPV et forfait mobilité éventuels, moins la déduction forfaitaire sur heures supp. La <b>PPV</b> est exonérée de cotisations (≤ 3 000 €/an) mais réintégrée dans la rémunération servant au calcul de la RGDU ; le <b>forfait mobilité</b> est exonéré (600 €/an, ou 900 €/an cumulés avec le Navigo) et sans effet sur la RGDU. Effectif à temps partiel : jours de repas estimés au prorata des heures. Estimation indicative, hors versement mobilité.</p>
 </div>
 </main>
 <div id="printZone"></div>
@@ -274,11 +313,11 @@ const DEFAUTS = {
   rgdu: { tmin: 0.0200, tdelta: 0.3781, puissance: 1.75 }, // recalé sur les bulletins Combo Paie de juillet 2026 (écart < 1,50 €/bulletin)
 };
 const GRILLE_DEFAUT = [
-  { id:"I-A", label:"Niv. I — éch. A · équipier débutant", taux:11.88 },
+  { id:"I-A", label:"Niv. I — éch. A · équipier cuisine / salle", taux:11.88 },
   { id:"I-B", label:"Niv. I — éch. B", taux:11.90 },
   { id:"II-A", label:"Niv. II — éch. A · employé qualifié", taux:12.22 },
   { id:"II-B", label:"Niv. II — éch. B", taux:12.45 },
-  { id:"III-A", label:"Niv. III — éch. A · assistant manager", taux:12.82 },
+  { id:"III-A", label:"Niv. III — éch. A · resp. cuisine / assistant salle", taux:12.82 },
   { id:"III-B", label:"Niv. III — éch. B", taux:12.93 },
   { id:"III-C", label:"Niv. III — éch. C", taux:13.98 },
   { id:"IV-A", label:"Niv. IV — éch. A · responsable de site", taux:15.01 },
@@ -294,7 +333,11 @@ try {
   const cfg = JSON.parse(localStorage.getItem("paie-config") || "null");
   if (cfg) {
     if (cfg.etab) etabInit = cfg.etab;
-    if (cfg.grille) grille = cfg.grille;
+    if (cfg.grille) {
+      grille = cfg.grille;
+      // Les intitulés suivent toujours l'app : seule la valeur du taux sauvegardée fait foi.
+      grille.forEach(g => { const d = GRILLE_DEFAUT.find(x => x.id === g.id); if (d) g.label = d.label; });
+    }
     if (cfg.P) P = Object.assign({}, DEFAUTS, cfg.P,
       { sal: Object.assign({}, DEFAUTS.sal, cfg.P.sal), pat: Object.assign({}, DEFAUTS.pat, cfg.P.pat), rgdu: Object.assign({}, DEFAUTS.rgdu, cfg.P.rgdu) });
   }
@@ -330,7 +373,8 @@ function calculer(o) {
   const prorata = o.heures >= 17.5 ? 1 : o.heures/17.5;
   const navigoRemb = o.avecNavigo ? (P.navigo * P.navigoPct/100) * prorata : 0;
   const ppv = o.ppvMens || 0; // PPV : exonérée de cotisations (< 50 sal., < 3 SMIC) mais réintégrée dans la rému RGDU (BOSS §170-180, depuis 2025)
-  const netAvantImpot = brutSoumis - cotS + redSalHS - alanSal - avNature + navigoRemb + ppv;
+  const fmd = o.fmdMens || 0; // Forfait mobilités durables : exonéré cotisations + IR (600 €/an seul, 900 €/an cumulé Navigo), hors assiette RGDU
+  const netAvantImpot = brutSoumis - cotS + redSalHS - alanSal - avNature + navigoRemb + ppv + fmd;
   const assietteIR = Math.max(0, brutSoumis - cotS - alanSal - hsMensBrut);
   const pas = assietteIR * ((o.tauxPAS||0)/100);
   const netApresImpot = netAvantImpot - pas;
@@ -348,15 +392,15 @@ function calculer(o) {
   const reduction = remuRGDU * coef;
   // Coût = « Total versé par l'employeur » du bulletin : l'avantage repas est reintégré au brut pour les
   // cotisations puis reprisé, car ce n'est pas une sortie de caisse (le coût réel des repas est en food cost).
-  const coutEmployeur = brutSoumis - avNature + cotP - reduction + alanPat + navigoRemb - deducPatHS + ppv;
-  return { hMens, hMensBase, sup, brutBase, hsMensBrut, redSalHS, deducPatHS, avNature, brutSoumis, cotS, netAvantImpot, pas, netApresImpot, cotP, coef, reduction, coutEmployeur, alanSal, alanPat, navigoRemb, ppv };
+  const coutEmployeur = brutSoumis - avNature + cotP - reduction + alanPat + navigoRemb - deducPatHS + ppv + fmd;
+  return { hMens, hMensBase, sup, brutBase, hsMensBrut, redSalHS, deducPatHS, avNature, brutSoumis, cotS, netAvantImpot, pas, netApresImpot, cotP, coef, reduction, coutEmployeur, alanSal, alanPat, navigoRemb, ppv, fmd };
 }
 
 // ============ ÉTAT UI ============
 const E = {
   etab: etabInit,
   poste: "IV-A", tauxH: 15.01, heuresA: 35, posteB: "IV-A", tauxB: 15.01, heuresB: 30, comparer: false,
-  joursMois: 21, avecRepas: true, avecNavigo: true, tauxPAS: 0, primeMens: 0, ppvMens: 0, heuresSup: 0,
+  joursMois: 21, avecRepas: true, avecNavigo: true, tauxPAS: 0, primeMens: 0, ppvMens: 0, fmdMens: 0, heuresSup: 0,
 };
 const $ = (id) => document.getElementById(id);
 
@@ -417,13 +461,20 @@ function rendre() {
   if (!confB) $("noteConfB").textContent = "⛔ Contrat B sous le minimum applicable (" + eur(miniEffB) + "/h) — illégal.";
 
   const joursB = Math.max(1, Math.round(E.joursMois * E.heuresB / E.heuresA)) || E.joursMois;
-  const A = calculer({ tauxH:E.tauxH, heures:E.heuresA, heuresSup:E.heuresSup, joursMois:E.joursMois, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens, ppvMens:E.ppvMens });
-  const B = calculer({ tauxH:E.tauxB, heures:E.heuresB, heuresSup:E.heuresSup, joursMois:joursB, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens, ppvMens:E.ppvMens });
+  const A = calculer({ tauxH:E.tauxH, heures:E.heuresA, heuresSup:E.heuresSup, joursMois:E.joursMois, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens, ppvMens:E.ppvMens, fmdMens:E.fmdMens });
+  const B = calculer({ tauxH:E.tauxB, heures:E.heuresB, heuresSup:E.heuresSup, joursMois:joursB, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens, ppvMens:E.ppvMens, fmdMens:E.fmdMens });
 
   $("notePPV").hidden = !(E.ppvMens > 0);
   if (E.ppvMens > 0) {
     const plafInfo = E.ppvMens * 12 > 3000 ? " ⚠️ " + eur(E.ppvMens*12, 0) + "/an dépasse le plafond d'exonération de 3 000 €/an." : "";
     $("notePPV").textContent = "ℹ️ PPV exonérée de cotisations (versement max. 1×/trimestre) mais réintégrée depuis 2025 dans la rémunération servant au calcul de la réduction générale : le coefficient RGDU baisse." + plafInfo;
+  }
+  $("noteFMD").hidden = !(E.fmdMens > 0);
+  if (E.fmdMens > 0) {
+    const fmdAn = E.fmdMens * 12;
+    const plafFMD = E.avecNavigo ? 900 - A.navigoRemb * 12 : 600;
+    const alerte = fmdAn > plafFMD + 0.01 ? " ⚠️ " + eur(fmdAn, 0) + "/an dépasse le plafond exonéré (" + eur(Math.max(0, plafFMD), 0) + "/an" + (E.avecNavigo ? " après déduction du Navigo remboursé, cumul limité à 900 €/an" : ", limite hors abonnement transport : 600 €/an") + ") : l'excédent serait soumis à cotisations." : "";
+    $("noteFMD").textContent = "ℹ️ Forfait mobilités durables (vélo, covoiturage, trottinette…) : exonéré de cotisations et d'impôt, sans effet sur la réduction RGDU. Attestation sur l'honneur du salarié à conserver." + alerte;
   }
 
   const labA = E.poste + " · " + E.heuresA + " h";
@@ -449,8 +500,11 @@ function rendre() {
   h += ligne("Cotisations salariales", -A.cotS, -B.cotS, "neg");
   if (avecHS) h += ligne("Réduction cotisations HS (" + P.hsRedSalPct + " %)", A.redSalHS, B.redSalHS);
   if (A.alanSal > 0.005) h += ligne("Mutuelle Alan part salariale (" + (100-P.alanEmpPct) + " %)", -A.alanSal, -B.alanSal, "neg");
-  if (E.avecNavigo) h += ligne("Remboursement Navigo (" + P.navigoPct + " %, exonéré)", A.navigoRemb, B.navigoRemb);
+  const navigoPlein = P.navigo * P.navigoPct / 100;
+  const proNav = (A.navigoRemb < navigoPlein - 0.01) || (E.comparer && B.navigoRemb < navigoPlein - 0.01);
+  if (E.avecNavigo) h += ligne("Remboursement Navigo (" + P.navigoPct + " %" + (proNav ? ", proratisé sous 17,5 h" : "") + ", exonéré)", A.navigoRemb, B.navigoRemb);
   if (E.ppvMens > 0) h += ligne("PPV — prime de partage de la valeur (exonérée)", A.ppv, B.ppv);
+  if (E.fmdMens > 0) h += ligne("Forfait mobilités durables (exonéré)", A.fmd, B.fmd);
   h += ligne("Net avant impôt (versé)", A.netAvantImpot, B.netAvantImpot, "fort");
   if (E.tauxPAS > 0) {
     h += ligne("Prélèvement à la source (" + E.tauxPAS + " %)", -A.pas, -B.pas, "neg");
@@ -464,6 +518,7 @@ function rendre() {
   if (A.sup > 0 || (E.comparer && B.sup > 0)) e += ligne("Déduction forfaitaire HS (" + eur(P.hsDeducPat) + "/h)", -A.deducPatHS, -B.deducPatHS, "neg");
   e += ligne("Mutuelle Alan part employeur (" + P.alanEmpPct + " %)", A.alanPat, B.alanPat);
   if (E.avecNavigo) e += ligne("Remboursement Navigo", A.navigoRemb, B.navigoRemb);
+  if (E.fmdMens > 0) e += ligne("Forfait mobilités durables (0 cotisation)", A.fmd, B.fmd);
   e += ligne("Coût employeur mensuel", A.coutEmployeur, B.coutEmployeur, "fort");
   e += ligne("Coût employeur annuel", A.coutEmployeur*12, B.coutEmployeur*12, "fort");
   $("employeur").innerHTML = e;
@@ -481,6 +536,9 @@ function champP(lib, get, set, step) {
   return d;
 }
 function rendreParams() {
+  // Ne pas reconstruire les champs pendant que l'utilisateur tape dedans (sinon perte de focus à chaque chiffre).
+  const actif = document.activeElement;
+  if (actif && ($("pgrid").contains(actif) || $("glist").contains(actif))) return;
   const pg = $("pgrid"); pg.innerHTML = "";
   [
     ["SMIC payé €/h", () => P.smicH, v => P.smicH = v],
@@ -518,7 +576,7 @@ function lier(id, cle, type) {
   else { el.value = E[cle]; el.oninput = () => { E[cle] = parseFloat(el.value) || 0; rendre(); }; }
 }
 lier("tauxH","tauxH"); lier("heuresA","heuresA"); lier("tauxB","tauxB"); lier("heuresB","heuresB");
-lier("joursMois","joursMois"); lier("primeMens","primeMens"); lier("ppvMens","ppvMens"); lier("tauxPAS","tauxPAS");
+lier("joursMois","joursMois"); lier("primeMens","primeMens"); lier("ppvMens","ppvMens"); lier("fmdMens","fmdMens"); lier("tauxPAS","tauxPAS");
 lier("comparer","comparer","check"); lier("avecRepas","avecRepas","check"); lier("avecNavigo","avecNavigo","check");
 $("poste").onchange = (ev) => {
   E.poste = ev.target.value;
@@ -531,6 +589,7 @@ $("etab").onchange = (ev) => {
   appliquerEtab();
   sauver(); rendre();
   if (!$("panel-equipe").hidden) rendreEquipe();
+  if (!$("panel-optim").hidden) rendreOptim();
 };
 $("posteB").onchange = (ev) => {
   E.posteB = ev.target.value;
@@ -560,7 +619,7 @@ function appliquerEtab() {
 function bulletinPDF() {
   const site = SITES[E.etab] || SITES.CD9;
   const posteObj = grille.find(g => g.id === E.poste) || grille[0];
-  const A = calculer({ tauxH:E.tauxH, heures:E.heuresA, heuresSup:E.heuresSup, joursMois:E.joursMois, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens, ppvMens:E.ppvMens });
+  const A = calculer({ tauxH:E.tauxH, heures:E.heuresA, heuresSup:E.heuresSup, joursMois:E.joursMois, avecRepas:E.avecRepas, avecNavigo:E.avecNavigo, tauxPAS:E.tauxPAS, primeMens:E.primeMens, ppvMens:E.ppvMens, fmdMens:E.fmdMens });
   const dte = new Date().toLocaleDateString("fr-FR", { day:"numeric", month:"long", year:"numeric" });
   const tr = (lib, v, cls) => '<tr class="'+(cls||"")+'"><td>'+lib+'</td><td class="n">'+eur(v)+'</td></tr>';
   let rows = "";
@@ -573,8 +632,9 @@ function bulletinPDF() {
   if (A.sup > 0) rows += tr("Réduction cotisations salariales HS", A.redSalHS);
   if (A.alanSal > 0.005) rows += tr("Mutuelle Alan — part salariale", -A.alanSal, "neg");
   if (E.avecRepas) rows += tr("Reprise avantage en nature", -A.avNature, "neg");
-  if (E.avecNavigo) rows += tr("Remboursement Navigo ("+P.navigoPct+" % — exonéré)", A.navigoRemb);
+  if (E.avecNavigo) rows += tr("Remboursement Navigo ("+P.navigoPct+" %"+(A.navigoRemb < P.navigo*P.navigoPct/100 - 0.01 ? " — proratisé sous 17,5 h" : "")+" — exonéré)", A.navigoRemb);
   if (E.ppvMens > 0) rows += tr("PPV — prime de partage de la valeur (exonérée)", A.ppv);
+  if (E.fmdMens > 0) rows += tr("Forfait mobilités durables (exonéré)", A.fmd);
   rows += tr("Net à payer avant impôt", A.netAvantImpot, "fort");
   if (E.tauxPAS > 0) {
     rows += tr("Prélèvement à la source ("+E.tauxPAS+" %)", -A.pas, "neg");
@@ -587,6 +647,7 @@ function bulletinPDF() {
   if (A.sup > 0) rows += tr("Déduction forfaitaire patronale HS ("+eur(P.hsDeducPat)+"/h)", -A.deducPatHS);
   rows += tr("Mutuelle Alan — part employeur ("+P.alanEmpPct+" %)", A.alanPat);
   if (E.avecNavigo) rows += tr("Remboursement Navigo", A.navigoRemb);
+  if (E.fmdMens > 0) rows += tr("Forfait mobilités durables (exonéré)", A.fmd);
   rows += tr("Coût total employeur mensuel", A.coutEmployeur, "fort");
   rows += tr("Coût total employeur annuel (×12)", A.coutEmployeur*12, "fort");
 
@@ -617,36 +678,52 @@ function sauverEquipe() { try { localStorage.setItem("paie-equipe", JSON.stringi
 function coutLigne(l) {
   const taux = Math.max(grille.find(g => g.id === l.poste)?.taux || 0, P.smicH);
   const joursMois = Math.max(1, Math.round(21 * Math.min(1, (l.heures || 0) / 35)));
-  const c = calculer({ tauxH: taux, heures: l.heures || 0, joursMois, avecRepas: EQ.repas, avecNavigo: EQ.navigo, tauxPAS: 0, primeMens: 0 });
-  return { brut: c.brutSoumis, charges: c.coutEmployeur - c.brutSoumis, total: c.coutEmployeur, sup: c.sup };
+  const c = calculer({ tauxH: taux, heures: l.heures || 0, joursMois, avecRepas: EQ.repas, avecNavigo: EQ.navigo, tauxPAS: 0, primeMens: 0, ppvMens: l.ppv || 0, fmdMens: l.fmd || 0 });
+  return { brut: c.brutSoumis, charges: c.coutEmployeur - c.brutSoumis, total: c.coutEmployeur, sup: c.sup, navigoRemb: c.navigoRemb };
 }
 
 function rendreEquipe() {
   const host = $("eqlist"); host.innerHTML = "";
-  let brutM = 0, chargeM = 0, effectif = 0, heuresTot = 0;
-
   equipe.forEach((l, idx) => {
-    const c = coutLigne(l);
-    const nb = l.nb || 0;
-    brutM += c.brut * nb; chargeM += c.charges * nb; effectif += nb; heuresTot += (l.heures || 0) * nb;
-
-    const row = document.createElement("div"); row.className = "eqline";
+    const row = document.createElement("div"); row.className = "eqline"; row._l = l;
     const opts = grille.map(g => '<option value="' + g.id + '"' + (g.id === l.poste ? " selected" : "") + '>' + g.label + "</option>").join("");
-    const hsTag = c.sup > 0 ? ' <span style="color:var(--orange);font-weight:600">+' + c.sup.toLocaleString("fr-FR") + ' HS</span>' : '';
     row.innerHTML =
       '<div class="eqposte"><label class="txt">Poste</label><select>' + opts + '</select></div>' +
-      '<div><label class="txt">H/sem' + hsTag + '</label><input type="number" class="num" step="0.5" min="1" value="' + l.heures + '"></div>' +
+      '<div><label class="txt">H/sem <span class="hsbadge" style="color:var(--orange);font-weight:600"></span></label><input type="number" class="num" step="0.5" min="1" value="' + l.heures + '"></div>' +
       '<div><label class="txt">Nb</label><input type="number" class="num" step="1" min="0" value="' + l.nb + '"></div>' +
-      '<div class="eqcost" title="' + nb + ' × ' + eur(c.total) + '">' + eur(c.total * nb) + '</div>' +
+      '<div><label class="txt">PPV</label><input type="number" class="num" step="10" min="0" value="' + (l.ppv || 0) + '"></div>' +
+      '<div><label class="txt">F. mob</label><input type="number" class="num" step="5" min="0" value="' + (l.fmd || 0) + '"></div>' +
+      '<div class="eqcost"></div>' +
       '<button class="eqdel" type="button" title="Supprimer">✕</button>';
     const sel = row.querySelector("select");
-    const [inpH, inpN] = row.querySelectorAll("input");
-    sel.onchange = () => { l.poste = sel.value; sauverEquipe(); rendreEquipe(); };
-    inpH.oninput = () => { l.heures = parseFloat(inpH.value) || 0; sauverEquipe(); rendreEquipe(); };
-    inpN.oninput = () => { l.nb = parseInt(inpN.value, 10) || 0; sauverEquipe(); rendreEquipe(); };
+    const [inpH, inpN, inpPpv, inpFmd] = row.querySelectorAll("input");
+    // Saisie : on met à jour les montants SANS reconstruire la liste (sinon le champ perd le focus à chaque chiffre).
+    sel.onchange = () => { l.poste = sel.value; sauverEquipe(); majEquipe(); };
+    inpH.oninput = () => { l.heures = parseFloat(inpH.value) || 0; sauverEquipe(); majEquipe(); };
+    inpN.oninput = () => { l.nb = parseInt(inpN.value, 10) || 0; sauverEquipe(); majEquipe(); };
+    inpPpv.oninput = () => { l.ppv = parseFloat(inpPpv.value) || 0; sauverEquipe(); majEquipe(); };
+    inpFmd.oninput = () => { l.fmd = parseFloat(inpFmd.value) || 0; sauverEquipe(); majEquipe(); };
     row.querySelector(".eqdel").onclick = () => { equipe.splice(idx, 1); if (!equipe.length) equipe.push({ poste: "I-A", heures: 35, nb: 1 }); sauverEquipe(); rendreEquipe(); };
     host.appendChild(row);
   });
+  majEquipe();
+}
+
+function majEquipe() {
+  let brutM = 0, chargeM = 0, effectif = 0, heuresTot = 0;
+  const alertes = [];
+  document.querySelectorAll("#eqlist .eqline").forEach((row, i) => {
+    const l = row._l, c = coutLigne(l), nb = l.nb || 0;
+    brutM += c.brut * nb; chargeM += c.charges * nb; effectif += nb; heuresTot += (l.heures || 0) * nb;
+    row.querySelector(".hsbadge").textContent = c.sup > 0 ? "+" + c.sup.toLocaleString("fr-FR") + " HS" : "";
+    const cost = row.querySelector(".eqcost");
+    cost.textContent = eur(c.total * nb);
+    cost.title = nb + " × " + eur(c.total);
+    if ((l.ppv || 0) * 12 > 3000) alertes.push("Ligne " + (i + 1) + " : PPV " + eur((l.ppv || 0) * 12, 0) + "/an au-delà des 3 000 €/an exonérés — l'excédent serait soumis à cotisations et la ligne est sous-estimée.");
+    const capF = EQ.navigo ? Math.max(0, 900 - c.navigoRemb * 12) : 600;
+    if ((l.fmd || 0) * 12 > capF + 0.01) alertes.push("Ligne " + (i + 1) + " : forfait mobilité " + eur((l.fmd || 0) * 12, 0) + "/an au-delà du plafond exonéré (" + eur(capF, 0) + "/an" + (EQ.navigo ? " après Navigo, cumul 900 €/an" : "") + ").");
+  });
+  $("eqAlertes").innerHTML = alertes.length ? '<div class="alerte">⚠️ ' + alertes.join("<br>") + '</div>' : "";
 
   const totM = brutM + chargeM;
   const wk = x => x * 12 / 52;
@@ -685,13 +762,149 @@ $("eqNavigo").onchange = () => { EQ.navigo = $("eqNavigo").checked; sauverEquipe
 $("eqCA").oninput = () => { EQ.ca = parseFloat($("eqCA").value) || 0; sauverEquipe(); rendreEquipe(); };
 $("eqAdd").onclick = () => { equipe.push({ poste: "I-A", heures: 35, nb: 1 }); sauverEquipe(); rendreEquipe(); };
 
+// ============ ONGLET HEURES × PPV ============
+const OP = { poste: "I-A", net: 1800, ppvMax: 250, repas: true, navigo: true, jours: 21, fmd: false };
+try { const o = JSON.parse(localStorage.getItem("paie-optim") || "null"); if (o) Object.assign(OP, o); } catch (e) {}
+function sauverOptim() { try { localStorage.setItem("paie-optim", JSON.stringify(OP)); } catch (e) {} }
+
+function calcOptim(h, ppv, fmd) {
+  const taux = Math.max(grille.find(g => g.id === OP.poste)?.taux || 0, P.smicH);
+  const joursMois = Math.max(1, Math.round((OP.jours || 21) * Math.min(1, h / 35)));
+  return calculer({ tauxH: taux, heures: h, joursMois, avecRepas: OP.repas, avecNavigo: OP.navigo, tauxPAS: 0, primeMens: 0, ppvMens: ppv, fmdMens: fmd || 0 });
+}
+
+// Pour une durée donnée, montage exact atteignant le net cible : forfait mobilité en priorité
+// (0 cotisation, 0 effet RGDU, dans la limite exonérée), complété en PPV.
+function capFmdMens(base) {
+  if (!OP.fmd) return 0;
+  return Math.max(0, (OP.navigo ? 900 - base.navigoRemb * 12 : 600) / 12);
+}
+function montagePour(h, cible) {
+  const base = calcOptim(h, 0, 0);
+  const besoin = cible - base.netAvantImpot;
+  if (besoin < -0.005) return null;
+  const fmd = Math.min(capFmdMens(base), Math.max(0, besoin));
+  const ppv = Math.max(0, besoin - fmd);
+  if (ppv > OP.ppvMax + 0.005) return null;
+  const c = (fmd > 0.005 || ppv > 0.005) ? calcOptim(h, ppv, fmd) : base;
+  return { h, ppv, fmd, net: c.netAvantImpot, cout: c.coutEmployeur, sup: c.sup };
+}
+function meilleurMontage(cible) {
+  let best = null;
+  for (let h = 7; h <= 39.001; h += 0.5) {
+    const m = montagePour(h, cible);
+    if (m && (!best || m.cout < best.cout)) best = m;
+  }
+  return best;
+}
+
+function rendreOptim() {
+  $("opPoste").innerHTML = grille.map(g => {
+    const m = Math.max(g.taux || 0, P.smicH);
+    return '<option value="' + g.id + '"' + (g.id === OP.poste ? " selected" : "") + '>' + g.label + " — " + m.toLocaleString("fr-FR", { minimumFractionDigits: 2 }) + " €/h</option>";
+  }).join("");
+  const hFmt = (h) => h.toLocaleString("fr-FR", { maximumFractionDigits: 1 });
+
+  // --- Meilleures combinaisons pour l'objectif net ---
+  const colFmd = !!OP.fmd;
+  const hsTag = (sup) => sup > 0 ? ' <span style="color:var(--orange);font-size:11px">+' + hFmt(sup) + ' HS</span>' : "";
+  const combos = [];
+  for (let h = 7; h <= 39.001; h += 0.5) {
+    const m = montagePour(h, OP.net);
+    if (m) combos.push(m);
+  }
+  combos.sort((a, b) => a.cout - b.cout);
+  const top = combos.slice(0, 8);
+
+  $("opAucun").hidden = combos.length > 0;
+  $("opBest").hidden = combos.length === 0;
+  const theadCombos = "<thead><tr><th>H/sem</th>" + (colFmd ? "<th>Forfait mob.</th>" : "") + "<th>PPV / mois</th><th>Net versé</th><th>Coût employeur</th><th>vs n°1</th></tr></thead>";
+  if (!combos.length) {
+    const base39 = calcOptim(39, 0, 0);
+    const maxi = calcOptim(39, OP.ppvMax, capFmdMens(base39)).netAvantImpot;
+    const mini = calcOptim(7, 0, 0).netAvantImpot;
+    $("opAucun").textContent = OP.net > maxi
+      ? "Aucune combinaison n'atteint " + eur(OP.net, 0) + " net avec ce poste : le maximum est " + eur(maxi, 0) + " (39 h + " + eur(OP.ppvMax, 0) + " de PPV" + (colFmd ? " + forfait mobilité" : "") + "). Choisis un échelon supérieur ou baisse l'objectif."
+      : "Même 7 h/sem sans PPV dépasse déjà l'objectif (" + eur(mini, 0) + " net minimum avec ce poste). Monte l'objectif net.";
+    $("opCombosT").innerHTML = "";
+  } else {
+    const best = combos[0];
+    $("opBestVal").textContent = eur(best.cout, 0) + "/mois";
+    $("opBestSub").textContent = hFmt(best.h) + " h/sem"
+      + (best.fmd > 0.5 ? " + " + eur(best.fmd, 0) + " de forfait mobilité" : "")
+      + (best.ppv > 0.5 ? " + " + eur(best.ppv, 0) + " de PPV" : "")
+      + " → " + eur(best.net, 0) + " net · " + eur(best.cout * 12, 0) + "/an"
+      + (best.sup > 0 ? " · " + hFmt(best.sup) + " HS/sem incluses" : "");
+    $("opCombosT").innerHTML = theadCombos + "<tbody>" + top.map((c, i) => {
+      const style = i === 0 ? ' style="background:#eef5ec;font-weight:700"' : "";
+      return "<tr" + style + "><td>" + hFmt(c.h) + " h" + hsTag(c.sup) + "</td>"
+        + (colFmd ? "<td>" + eur(c.fmd, 0) + "</td>" : "")
+        + "<td>" + eur(c.ppv, 0) + "</td><td>" + eur(c.net, 0) + "</td><td>" + eur(c.cout) + "</td>"
+        + "<td>" + (i === 0 ? "—" : "+" + eur((c.cout - best.cout) * 12, 0) + "/an") + "</td></tr>";
+    }).join("") + "</tbody>";
+  }
+
+  // --- Frontière : montage optimal par niveau de net (à partir de 1 200 €) ---
+  const base39f = calcOptim(39, 0, 0);
+  const netMax = calcOptim(39, OP.ppvMax, capFmdMens(base39f)).netAvantImpot;
+  const pas = (netMax - 1200) > 1300 ? 200 : 100;
+  const cibles = [];
+  for (let n = 1200; n <= netMax; n += pas) cibles.push(n);
+  const front = cibles.map(n => ({ n, m: meilleurMontage(n) })).filter(x => x.m);
+  let bestRatio = Infinity;
+  front.forEach(x => { x.ratio = x.m.cout / x.m.net; if (x.ratio < bestRatio) bestRatio = x.ratio; });
+  const theadFront = "<thead><tr><th>Net visé</th><th>H/sem</th>" + (colFmd ? "<th>Forfait mob.</th>" : "") + "<th>PPV / mois</th><th>Coût employeur</th><th>Rendement</th></tr></thead>";
+  $("opFrontT").innerHTML = theadFront + "<tbody>" + (front.map(x => {
+    const star = Math.abs(x.ratio - bestRatio) < 0.0005;
+    return "<tr" + (star ? ' style="background:#eef5ec;font-weight:700"' : "") + "><td>" + (star ? "★ " : "") + eur(x.n, 0) + "</td>"
+      + "<td>" + hFmt(x.m.h) + " h" + hsTag(x.m.sup) + "</td>"
+      + (colFmd ? "<td>" + eur(x.m.fmd, 0) + "</td>" : "")
+      + "<td>" + eur(x.m.ppv, 0) + "</td><td>" + eur(x.m.cout, 0) + "</td>"
+      + "<td>" + x.ratio.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €/€ net</td></tr>";
+  }).join("") || '<tr><td colspan="6">Aucun montage possible entre 1 200 € net et le maximum de ce poste.</td></tr>') + "</tbody>";
+
+  // --- Matrice heures × PPV ---
+  const heuresListe = [10, 12.5, 15, 17.5, 20, 25, 30, 35, 37, 39];
+  const ppvListe = [0, 50, 100, 150, 200, 250].filter(v => v === 0 || v <= OP.ppvMax);
+  const cells = heuresListe.map(h => ppvListe.map(ppv => {
+    const c = calcOptim(h, ppv);
+    return { cout: c.coutEmployeur, net: c.netAvantImpot, ratio: c.coutEmployeur / c.netAvantImpot };
+  }));
+  const ratios = cells.flat().map(c => c.ratio);
+  const rMin = Math.min(...ratios), rMax = Math.max(...ratios);
+  const teinte = (r) => {
+    const t = rMax > rMin ? (r - rMin) / (rMax - rMin) : 0;
+    return "hsl(" + Math.round(110 - t * 85) + ", 60%, " + Math.round(94 - t * 5) + "%)";
+  };
+  let m = "<thead><tr><th>H/sem \\ PPV</th>" + ppvListe.map(p => "<th>" + eur(p, 0) + "</th>").join("") + "</tr></thead><tbody>";
+  heuresListe.forEach((h, i) => {
+    m += "<tr><td><b>" + hFmt(h) + " h</b></td>" + ppvListe.map((p, j) => {
+      const c = cells[i][j];
+      return '<td style="background:' + teinte(c.ratio) + '"><b>' + eur(c.cout, 0) + '</b><br><span style="font-size:11px;color:var(--gris)">' + eur(c.net, 0) + ' net</span></td>';
+    }).join("") + "</tr>";
+  });
+  $("opMatrice").innerHTML = m + "</tbody>";
+}
+
+$("opNet").value = OP.net; $("opPpvMax").value = OP.ppvMax; $("opJours").value = OP.jours;
+$("opRepas").checked = OP.repas; $("opNavigo").checked = OP.navigo; $("opFmd").checked = OP.fmd;
+$("opJours").oninput = () => { OP.jours = Math.max(1, Math.min(26, parseInt($("opJours").value, 10) || 21)); sauverOptim(); rendreOptim(); };
+$("opFmd").onchange = () => { OP.fmd = $("opFmd").checked; sauverOptim(); rendreOptim(); };
+$("opNet").oninput = () => { OP.net = parseFloat($("opNet").value) || 0; sauverOptim(); rendreOptim(); };
+$("opPpvMax").oninput = () => { OP.ppvMax = parseFloat($("opPpvMax").value) || 0; sauverOptim(); rendreOptim(); };
+$("opRepas").onchange = () => { OP.repas = $("opRepas").checked; sauverOptim(); rendreOptim(); };
+$("opNavigo").onchange = () => { OP.navigo = $("opNavigo").checked; sauverOptim(); rendreOptim(); };
+$("opPoste").onchange = () => { OP.poste = $("opPoste").value; sauverOptim(); rendreOptim(); };
+
 document.querySelectorAll(".tab").forEach(t => {
   t.onclick = () => {
     const name = t.dataset.tab;
     document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x === t));
     $("panel-salaire").hidden = name !== "salaire";
+    $("panel-optim").hidden = name !== "optim";
     $("panel-equipe").hidden = name !== "equipe";
     if (name === "equipe") rendreEquipe();
+    if (name === "optim") rendreOptim();
   };
 });
 
