@@ -347,11 +347,11 @@
     <div style="flex:1;min-width:230px"><label class="txt">PER individuel / an — <b id="dirPERv"></b> <span class="src" id="dirPERmax" style="display:inline"></span></label><input type="range" id="dirPER" min="0" max="10000" step="250" style="width:100%"></div>
   </div>
   <div class="rang" style="row-gap:14px">
-    <div style="flex:1;min-width:230px"><label class="txt">CESU préfinancé / an — <b id="dirCESUv"></b></label><input type="range" id="dirCESU" min="0" max="2540" step="20" style="width:100%"></div>
+    <div style="flex:1;min-width:230px"><label class="txt">CESU préfinancé / an — <b id="dirCESUv"></b></label><input type="range" id="dirCESU" min="0" max="2591" step="20" style="width:100%"></div>
     <div style="flex:1;min-width:230px"><label class="txt">Compte courant prêté — <b id="dirCCAv"></b></label><input type="range" id="dirCCA" min="0" max="300000" step="5000" style="width:100%"></div>
   </div>
   <p class="note-i" id="dirAlertes" hidden></p>
-  <p class="src">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable — plafond ~10 % des revenus pro, majoré côté TNS (+15 % de la fraction du bénéfice entre 1 et 8 PASS). CESU : ≤ 2 540 €/an, zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
+  <p class="src">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable — plafond ~10 % des revenus pro, majoré côté TNS (+15 % de la fraction du bénéfice entre 1 et 8 PASS). CESU : ≤ 2 591 €/an (plafond 2026), zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
   <div class="ratiocard" id="dirObjCard" hidden style="border-left-color:var(--orange)">
     <div><div class="rv" id="dirObjVal" style="color:var(--orange)"></div></div>
     <div><div class="rl">Enveloppe nécessaire pour l'objectif</div><div class="rs" id="dirObjSub"></div></div>
@@ -1181,7 +1181,7 @@ function rendreDir() {
   $("dirESv").textContent = eur(DIR.es, 0) + " / 47 580 €";
   $("dirPERv").textContent = eur(DIR.per, 0);
   $("dirPERmax").textContent = "(plafond ~" + eur(S.perPlaf, 0) + " SASU · ~" + eur(U.perPlaf, 0) + " EURL)";
-  $("dirCESUv").textContent = eur(DIR.cesu, 0) + " / 2 540 €";
+  $("dirCESUv").textContent = eur(DIR.cesu, 0) + " / 2 591 €";
   $("dirCCAv").textContent = eur(DIR.cca, 0) + " (intérêts " + eur(DIR.cca * 0.0433, 0) + "/an)";
   const depasseSeuil = U.cotisDiv > 0.5;
   $("dirCapSeuil").innerHTML = "EURL : dividendes <b>sans cotisations TNS jusqu'à " + eur(DIR.cap * 0.10, 0) + "/an</b> (10 % du capital)" + (depasseSeuil ? ' — <span style="color:var(--brique);font-weight:700">seuil dépassé à cette répartition</span>' : "");
@@ -1189,7 +1189,7 @@ function rendreDir() {
   // Alertes plafonds
   const al = [];
   if (DIR.es > 47580) al.push("Épargne salariale au-delà des plafonds cumulés (47 580 €/an : intéressement 36 045 + PEE 3 845 + PERECO 7 690).");
-  if (DIR.cesu > 2540) al.push("CESU au-delà du plafond exonéré (2 540 €/an) — l'excédent serait requalifié.");
+  if (DIR.cesu > 2591) al.push("CESU au-delà du plafond exonéré (2 591 €/an en 2026) — l'excédent serait requalifié.");
   if (S.ts > 0.5) al.push("Taxe sur les salaires : la holding encaisse surtout des dividendes (hors champ TVA, rapport d'assujettissement " + Math.round((F.tsRatio || 0) * 100) + " %) → la rémunération du président de SASU supporte " + eur(S.ts, 0) + " de taxe sur les salaires (" + eur(S.ts * 0.75, 0) + " nets d'IS), à laquelle le gérant majoritaire TNS (EURL) échappe. Facturer davantage de prestations réelles avec TVA réduit ce rapport — exonération totale dès 90 % de CA soumis à TVA.");
   if (S.puma > 0.5 || U.puma > 0.5) {
     const q = [];
