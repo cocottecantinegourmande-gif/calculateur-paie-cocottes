@@ -112,12 +112,14 @@
   }
   /* Commentaires longs : un cran plus lisibles partout… */
   .aside { font-size:12.5px; color:var(--gris); line-height:1.6; }
-  /* …et sur grand écran, en colonne de droite, en face des réglages qu'ils expliquent */
+  /* …et sur grand écran, en colonne de droite (notes en marge flottantes : le contenu
+     de gauche coule sans trous, chaque commentaire se cale à la hauteur de sa section) */
   @media (min-width:1280px){
-    #panel-dir { display:grid; grid-template-columns:minmax(0,1fr) 330px; column-gap:30px; align-items:start; }
-    #panel-dir > * { grid-column:1; min-width:0; }
-    #panel-dir > .aside { grid-column:2; margin:0 0 6px; font-size:13px; background:var(--cg-paper-2); border-left:3px solid var(--cg-line-strong); border-radius:0 10px 10px 0; padding:11px 14px; }
-    #panel-dir > .note-i, #panel-dir > h2, #panel-dir > .cles, #panel-dir > .ratiocard, #panel-dir > div[style*="overflow-x"] { grid-column:1 / -1; }
+    #panel-dir { padding-right:362px; }
+    #panel-dir::after { content:""; display:block; clear:both; }
+    #panel-dir > .aside { float:right; clear:right; width:332px; box-sizing:border-box; margin:0 -362px 14px 0;
+      font-size:13px; background:var(--cg-paper-2); border-left:3px solid var(--cg-line-strong);
+      border-radius:0 10px 10px 0; padding:11px 14px; }
   }
   .eqline { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; padding:9px 0; border-bottom:1px solid var(--cg-line); }
   .eqline > div { display:flex; flex-direction:column; }
@@ -323,7 +325,7 @@
 </div>
 
 <div id="panel-dir" hidden>
-  <p class="note-i">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %). L'outil intègre aussi la <b>taxe PUMa</b> (cotisation subsidiaire maladie, art. L380-2 CSS — vise le « tout dividendes » avec moins de 9 612 € de rémunération) et la <b>CEHR + CDHR</b> (imposition minimale 20 % au-delà de 250 k€ / 500 k€ de RFR), ainsi que la <b>taxe sur les salaires</b> de la holding (due sur la rémunération du président de SAS quand la holding vit de dividendes hors TVA — le gérant TNS y échappe), la <b>CSG déductible à 6,8 %</b> en option barème et le <b>plafond PER majoré du TNS</b>.</p>
+  <p class="note-i aside">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %). L'outil intègre aussi la <b>taxe PUMa</b> (cotisation subsidiaire maladie, art. L380-2 CSS — vise le « tout dividendes » avec moins de 9 612 € de rémunération) et la <b>CEHR + CDHR</b> (imposition minimale 20 % au-delà de 250 k€ / 500 k€ de RFR), ainsi que la <b>taxe sur les salaires</b> de la holding (due sur la rémunération du président de SAS quand la holding vit de dividendes hors TVA — le gérant TNS y échappe), la <b>CSG déductible à 6,8 %</b> en option barème et le <b>plafond PER majoré du TNS</b>.</p>
 
   <div class="rang" style="margin-top:12px">
     <label class="check"><input type="checkbox" id="dirRemontee"> Calculer depuis les résultats des restos</label>
@@ -333,10 +335,8 @@
     <div><label class="txt">Résultat avant IS — Châteaudun (€/an, négatif si perte)</label><input type="number" id="dirR1" step="5000" style="width:105px"></div>
     <div><label class="txt">Résultat avant IS — Laborde (€/an, négatif si perte)</label><input type="number" id="dirR2" step="5000" style="width:105px"></div>
     <div><label class="txt">Résultat avant IS — Sèze (€/an, négatif si perte)</label><input type="number" id="dirR3" step="5000" style="width:105px"></div>
-    <button class="btn-add" id="dirSync" type="button" style="margin-top:0">↺ Récupérer depuis le Pilotage</button>
     <div><label class="txt">Prestations facturées par la holding (€/an)</label><input type="number" id="dirFees" step="5000" min="0" style="width:105px"></div>
   </div>
-  <p class="src" id="dirSyncInfo" hidden></p>
   <p class="src aside" id="dirFeesNote" hidden>⚠️ <b>Facturation holding → restos</b> : uniquement pour des <b>prestations réelles et distinctes du mandat social</b> (compta, RH, achats, marketing…), avec convention écrite et prix de marché — la Cour de cassation (juin 2026) requalifie les management fees qui rémunèrent la fonction de dirigeant. <b>En intégration fiscale, cette facturation est fiscalement neutre</b> (même résultat de groupe) : son intérêt est ailleurs (trésorerie régulière de la holding sans attendre les dividendes). <b>Hors intégration</b>, elle rend ta rémunération déductible chez la holding à hauteur des prestations facturées, et la holding dispose de son propre tronçon d'IS à 15 %.</p>
   <p class="src aside" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu. <b>Si un resto est en perte</b> : en intégration fiscale, sa perte s'impute immédiatement sur le bénéfice des autres (moins d'IS de groupe) ; sans intégration, elle est seulement reportée sur ses bénéfices futurs (non modélisé ici) et ce resto ne remonte aucun dividende.</p>
   <div class="rang" style="margin-top:12px">
@@ -1291,46 +1291,6 @@ $("dirRemontee").checked = DIR.remontee;
 $("dirRemontee").onchange = () => { DIR.remontee = $("dirRemontee").checked; sauverDir(); rendreDir(); };
 $("dirInteg").checked = DIR.integ;
 $("dirInteg").onchange = () => { DIR.integ = $("dirInteg").checked; sauverDir(); rendreDir(); };
-
-// Récupération du réel comptable depuis la base du Pilotage (cr_lignes : balance Pennylane par site × mois × compte).
-// Clé anonyme publique de la base Dashboard — la même que celle embarquée dans le Pilotage côté client.
-const DASH_SB = "https://txizebrslijdumfdcaby.supabase.co";
-const DASH_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4aXplYnJzbGlqZHVtZmRjYWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTY0MTUsImV4cCI6MjA5NjY5MjQxNX0.CCiXd3ISsE5spuuzOAM-PZ9ptCVJXdVwcqCHFfUuZ3E";
-$("dirSync").onclick = async () => {
-  $("dirSync").disabled = true; $("dirSync").textContent = "Récupération…";
-  try {
-    const now = new Date();
-    const cur = now.toISOString().slice(0, 7);
-    const dep = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString().slice(0, 7);
-    const r = await fetch(DASH_SB + "/rest/v1/cr_lignes?select=site_id,mois,compte,montant&mois=gte." + dep + "&mois=lt." + cur + "&limit=100000",
-      { headers: { apikey: DASH_KEY, Authorization: "Bearer " + DASH_KEY } });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const lignes = await r.json();
-    const agg = {};
-    for (const l of lignes) {
-      const c = String(l.compte || "");
-      if (!agg[l.site_id]) agg[l.site_id] = { mois: new Set(), res: 0 };
-      if (c.startsWith("7")) { agg[l.site_id].res += +l.montant; agg[l.site_id].mois.add(l.mois); }
-      else if (c.startsWith("6") && !c.startsWith("69")) { agg[l.site_id].res -= +l.montant; agg[l.site_id].mois.add(l.mois); }
-    }
-    if (!agg.cd9 && !agg.lb8) throw new Error("aucune ligne comptable");
-    const annualise = (a) => a && a.mois.size ? Math.round(a.res * 12 / a.mois.size) : 0;
-    const r1 = annualise(agg.cd9), r2 = annualise(agg.lb8);
-    // Sèze : pas encore de site dédié dans le Pilotage — on agrège tout site inconnu (hors cd9/lb8) s'il apparaît.
-    const autres = Object.keys(agg).filter(k => k !== "cd9" && k !== "lb8");
-    const r3 = autres.reduce((s, k) => s + annualise(agg[k]), 0);
-    DIR.r1 = r1; DIR.r2 = r2; DIR.remontee = true;
-    if (autres.length) DIR.r3 = r3;
-    $("dirR1").value = DIR.r1; $("dirR2").value = DIR.r2; $("dirR3").value = DIR.r3; $("dirRemontee").checked = true;
-    $("dirSyncInfo").hidden = false;
-    $("dirSyncInfo").textContent = "Réel comptable du Pilotage, annualisé (mois en cours exclu — " + (agg.cd9 ? agg.cd9.mois.size : 0) + " mois Châteaudun, " + (agg.lb8 ? agg.lb8.mois.size : 0) + " mois Laborde) : Châteaudun " + eur(r1, 0) + (r1 < 0 ? " (perte)" : "") + " · Laborde " + eur(r2, 0) + (r2 < 0 ? " (perte)" : "") + (autres.length ? " · Sèze (site " + autres.join("+") + ") " + eur(r3, 0) : ". Sèze n'est pas encore relié au Pilotage : saisis son résultat à la main") + ". Résultat avant IS, avant ta future rémunération et avant les changements d'équipe — ajuste à la main si besoin.";
-    sauverDir(); rendreDir();
-  } catch (e) {
-    $("dirSyncInfo").hidden = false;
-    $("dirSyncInfo").textContent = "⚠️ Impossible de lire la base du Pilotage (" + e.message + "). Saisis les résultats à la main.";
-  }
-  $("dirSync").disabled = false; $("dirSync").textContent = "↺ Récupérer depuis le Pilotage";
-};
 
 rendre();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
