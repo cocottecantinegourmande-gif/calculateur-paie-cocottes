@@ -314,7 +314,7 @@
 </div>
 
 <div id="panel-dir" hidden>
-  <p class="note-i">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %).</p>
+  <p class="note-i">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %). L'outil intègre aussi la <b>taxe PUMa</b> (cotisation subsidiaire maladie, art. L380-2 CSS — vise le « tout dividendes » avec moins de 9 612 € de rémunération) et la <b>CEHR + CDHR</b> (imposition minimale 20 % au-delà de 250 k€ / 500 k€ de RFR), ainsi que la <b>taxe sur les salaires</b> de la holding (due sur la rémunération du président de SAS quand la holding vit de dividendes hors TVA — le gérant TNS y échappe), la <b>CSG déductible à 6,8 %</b> en option barème et le <b>plafond PER majoré du TNS</b>.</p>
 
   <div class="rang" style="margin-top:12px">
     <label class="check"><input type="checkbox" id="dirRemontee"> Calculer depuis les résultats des restos</label>
@@ -347,11 +347,11 @@
     <div style="flex:1;min-width:230px"><label class="txt">PER individuel / an — <b id="dirPERv"></b> <span class="src" id="dirPERmax" style="display:inline"></span></label><input type="range" id="dirPER" min="0" max="10000" step="250" style="width:100%"></div>
   </div>
   <div class="rang" style="row-gap:14px">
-    <div style="flex:1;min-width:230px"><label class="txt">CESU préfinancé / an — <b id="dirCESUv"></b></label><input type="range" id="dirCESU" min="0" max="2540" step="20" style="width:100%"></div>
+    <div style="flex:1;min-width:230px"><label class="txt">CESU préfinancé / an — <b id="dirCESUv"></b></label><input type="range" id="dirCESU" min="0" max="2591" step="20" style="width:100%"></div>
     <div style="flex:1;min-width:230px"><label class="txt">Compte courant prêté — <b id="dirCCAv"></b></label><input type="range" id="dirCCA" min="0" max="300000" step="5000" style="width:100%"></div>
   </div>
   <p class="note-i" id="dirAlertes" hidden></p>
-  <p class="src">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable (plafond ~10 % des revenus pro). CESU : ≤ 2 540 €/an, zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
+  <p class="src">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable — plafond ~10 % des revenus pro, majoré côté TNS (+15 % de la fraction du bénéfice entre 1 et 8 PASS). CESU : ≤ 2 591 €/an (plafond 2026), zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
   <div class="ratiocard" id="dirObjCard" hidden style="border-left-color:var(--orange)">
     <div><div class="rv" id="dirObjVal" style="color:var(--orange)"></div></div>
     <div><div class="rl">Enveloppe nécessaire pour l'objectif</div><div class="rs" id="dirObjSub"></div></div>
@@ -1013,10 +1013,51 @@ function irBareme(rni, parts) {
 }
 
 // SASU assimilé salarié : ~40 % patronal / 22 % salarial T1 (PMSS 48 060 €/an), ~36 % / 23 % T2 — sans chômage ni AGS.
-// EURL TNS (réforme 2026, abattement d'assiette 26 %) : cotisations ≈ 30 % de l'enveloppe, minimum ≈ 1 300 €/an.
+// EURL TNS (réforme 2026, abattement d'assiette 26 %) : cotisations ≈ 30 % de l'enveloppe, minimales ≈ 1 135 €/an
+// (retraite de base ~967 € + IJ ~96 € + invalidité-décès ~72 €, assiettes 2026 vérifiées).
 // Dividendes : IS 15 %/25 % puis PFU 31,4 % OU option barème (abattement 40 % + PS 18,6 %) — l'outil prend le plus favorable.
 // EURL : fraction > 10 % du capital soumise aux cotisations TNS (~30 %) au lieu des PS.
-function dirCalc(forme, envRem, envDiv, isExt) {
+
+// Taxe PUMa — cotisation subsidiaire maladie (art. L380-2 CSS, formule Urssaf) : due si revenus d'activité < 20 % du PASS
+// (9 612 €) ET revenus du capital > 50 % du PASS (24 030 €). Dégressive : 6,5 % × (A − 0,5 PASS) × (1 − R / 0,2 PASS),
+// A plafonné à 8 PASS. Nulle dès 9 612 € de revenus d'activité. PASS 2026 : 48 060 €. Appel Urssaf en novembre N+1.
+function pumaCalc(rAct, rCap) {
+  const PASS = 48060;
+  if (rAct >= 0.20 * PASS || rCap <= 0.50 * PASS) return 0;
+  return 0.065 * (Math.min(rCap, 8 * PASS) - 0.50 * PASS) * (1 - rAct / (0.20 * PASS));
+}
+
+// CEHR (art. 223 sexies CGI : 3 % puis 4 %) + CDHR (art. 224 CGI, LF 2025 reconduite LF 2026 : imposition minimale
+// de 20 % du RFR). Seuils : 250 k€ (personne seule) / 500 k€ (couple), décote d'entrée jusqu'à 330 k€ / 660 k€.
+// L'IR comparé au plancher de 20 % est l'IR hors prélèvements sociaux, CEHR incluse.
+function hautsRevenus(rfr, ir) {
+  const couple = DIR.parts >= 2, s = couple ? 500000 : 250000;
+  const cehr = Math.max(0, Math.min(rfr, 2 * s) - s) * 0.03 + Math.max(0, rfr - 2 * s) * 0.04;
+  const cdhr = rfr > s ? Math.max(0, Math.min(0.20 * rfr, 0.825 * (rfr - s)) - (ir + cehr)) : 0;
+  return cehr + cdhr;
+}
+
+// Taxe sur les salaires (art. 231 CGI) : due par l'employeur dont moins de 90 % du CA est soumis à TVA —
+// cas de la holding qui vit de dividendes. Assiette : rémunération du président de SAS (assimilé salarié,
+// CE 19 juin 2017) ; le gérant majoritaire TNS en est exclu. Barème annuel 2026 : 4,25 % ≤ 9 229 €,
+// 8,5 % jusqu'à 18 423 €, 13,6 % au-delà, × rapport d'assujettissement. Franchise 1 200 €, décote à 2 040 €.
+function tsCalc(brut, ratio) {
+  if (!ratio || ratio <= 0 || brut <= 0) return 0;
+  const t = (Math.min(brut, 9229) * 0.0425 + Math.max(0, Math.min(brut, 18423) - 9229) * 0.085 + Math.max(0, brut - 18423) * 0.136) * ratio;
+  if (t <= 1200) return 0;
+  if (t <= 2040) return t - 0.75 * (2040 - t);
+  return t;
+}
+// Rapport d'assujettissement de la holding : part des encaissements hors champ TVA (dividendes remontés)
+// dans le total (dividendes + prestations facturées avec TVA). Exonération totale dès 90 % de CA soumis
+// à TVA (référence légale : année N-1, approximée ici sur l'année courante).
+function tsRapport(div, fees) {
+  const tot = div + fees;
+  if (tot <= 0 || fees / tot >= 0.90) return 0;
+  return div / tot;
+}
+
+function dirCalc(forme, envRem, envDiv, isExt, tsRatio) {
   const PMSSA = 48060;
   let brut = 0, netRem = 0, cotis = 0;
   if (forme === "SASU") {
@@ -1026,12 +1067,16 @@ function dirCalc(forme, envRem, envDiv, isExt) {
     netRem = t1 * 0.78 + t2 * 0.77;
     cotis = envRem - netRem;
   } else {
-    cotis = envRem > 0 ? Math.max(envRem * 0.30, Math.min(envRem, 1300)) : 0;
+    cotis = envRem > 0 ? Math.max(envRem * 0.30, Math.min(envRem, 1135)) : 0;
     netRem = envRem - cotis;
   }
   // isExt != null : mode remontée — l'IS a déjà été payé (filles ou groupe), envDiv est déjà net d'IS.
   const is = isExt != null ? isExt : isc(envDiv);
-  const divBrut = isExt != null ? envDiv : envDiv - is;
+  let divBrut = isExt != null ? envDiv : envDiv - is;
+  // Taxe sur les salaires : uniquement en mode holding (isExt != null) et côté SASU. Elle est déductible
+  // de l'IS (~25 %) : on retire son coût net du pool de dividendes distribuables.
+  const ts = (forme === "SASU" && isExt != null) ? tsCalc(brut, tsRatio) : 0;
+  if (ts > 0) divBrut = Math.max(0, divBrut - ts * 0.75);
   let sous = divBrut, sur = 0, cotisDiv = 0;
   if (forme === "EURL") {
     const seuil = DIR.cap * 0.10;
@@ -1040,19 +1085,34 @@ function dirCalc(forme, envRem, envDiv, isExt) {
   }
   const ccaInt = DIR.cca * 0.0433;
   const ccaNet = ccaInt * (1 - 0.314);
-  const imposableRem = Math.max(0, netRem - Math.min(netRem * 0.10, 14426) - DIR.per);
+  // Plafond PER : ~10 % des revenus pro pour l'assimilé salarié ; pour le TNS, 10 % du bénéfice (≤ 8 PASS)
+  // + 15 % de la fraction du bénéfice entre 1 et 8 PASS. Plancher : 10 % du PASS (4 806 €).
+  const b8 = Math.min(netRem, 8 * PMSSA);
+  const perPlaf = Math.max(4806, forme === "EURL" ? b8 * 0.10 + Math.max(0, b8 - PMSSA) * 0.15 : netRem * 0.10);
+  const perEff = Math.min(DIR.per, perPlaf);
+  const imposableRem = Math.max(0, netRem - Math.min(netRem * 0.10, 14555) - perEff);
   const baseFoyer = imposableRem + DIR.autres;
   const irAutres = irBareme(DIR.autres, DIR.parts);
+  const divTaxable = sous + Math.max(0, sur - cotisDiv);
   // Option 1 — PFU sur les dividendes (12,8 % IR + 18,6 % PS ; fraction TNS : 12,8 % IR + cotisations déjà comptées)
   const irPFU = irBareme(baseFoyer, DIR.parts) + sous * 0.314 + Math.max(0, sur - cotisDiv) * 0.128;
-  // Option 2 — barème sur les dividendes (abattement 40 %, PS 18,6 % sur la part hors TNS)
-  const irBar = irBareme(baseFoyer + (sous + Math.max(0, sur - cotisDiv)) * 0.60, DIR.parts) + sous * 0.186;
+  // Option 2 — barème sur les dividendes : abattement 40 %, PS 18,6 % sur la part hors TNS, et CSG déductible
+  // à 6,8 % du dividende brut soumis aux PS (déduction en N+1, modélisée ici en régime de croisière).
+  const irBar = irBareme(baseFoyer + divTaxable * 0.60 - sous * 0.068, DIR.parts) + sous * 0.186;
   const optionBareme = irBar < irPFU;
-  const divNet = sous + Math.max(0, sur - cotisDiv) - (optionBareme ? (irBar - irBareme(baseFoyer, DIR.parts)) : (sous * 0.314 + Math.max(0, sur - cotisDiv) * 0.128));
+  const divNet = divTaxable - (optionBareme ? (irBar - irBareme(baseFoyer, DIR.parts)) : (sous * 0.314 + Math.max(0, sur - cotisDiv) * 0.128));
   const irRemPart = Math.max(0, irBareme(baseFoyer, DIR.parts) - irAutres);
-  const cash = netRem - DIR.per + divNet + ccaNet + DIR.cesu - irRemPart;
-  const bloque = DIR.es * 0.903 + DIR.per;
-  return { brut, netRem, cotis, is, divBrut, cotisDiv, divNet, ccaInt, ccaNet, optionBareme, irRemPart, cash, bloque, total: cash + bloque };
+  // PUMa : revenus d'activité = rémunération nette (+ fraction TNS des dividendes en EURL, déjà dans l'assiette
+  // des cotisations) ; revenus du capital = dividendes hors fraction TNS + intérêts de compte courant.
+  const puma = pumaCalc(netRem + (forme === "EURL" ? sur : 0), (forme === "EURL" ? sous : divBrut) + ccaInt);
+  // CEHR/CDHR : calculées sur le RFR du foyer (dividendes avant abattement de 40 %), mais on n'impute au dirigeant
+  // que la part que ses revenus déclenchent — même logique que irRemPart pour les « autres revenus ».
+  const irCap = (optionBareme ? irBar - sous * 0.186 - irBareme(baseFoyer, DIR.parts) : divTaxable * 0.128) + ccaInt * 0.128;
+  const rfr = baseFoyer + divTaxable + ccaInt;
+  const hr = Math.max(0, hautsRevenus(rfr, irBareme(baseFoyer, DIR.parts) + irCap) - hautsRevenus(DIR.autres, irAutres));
+  const cash = netRem - perEff + divNet + ccaNet + DIR.cesu - irRemPart - puma - hr;
+  const bloque = DIR.es * 0.903 + perEff;
+  return { brut, netRem, cotis, is, ts, divBrut, cotisDiv, divNet, ccaInt, ccaNet, optionBareme, irRemPart, puma, hr, perPlaf, perEff, cash, bloque, total: cash + bloque };
 }
 
 function dirEnvLeviers() { return DIR.es + DIR.cesu + DIR.cca * 0.0433; }
@@ -1064,7 +1124,8 @@ function dirFlux(remPct, envInput) {
     const envAff = envInput != null ? envInput : DIR.env;
     const envTotal = Math.max(0, envAff - L);
     const envRem = envTotal * remPct / 100;
-    return { envAff, envRem, envDiv: envTotal - envRem, isExt: null, qp: 0 };
+    // Mode simple : la société d'exploitation (resto) a un CA soumis à TVA ≥ 90 % → pas de taxe sur les salaires.
+    return { envAff, envRem, envDiv: envTotal - envRem, isExt: null, qp: 0, tsRatio: 0 };
   }
   const P = envInput != null ? envInput : (DIR.r1 + DIR.r2);
   const envRem = Math.max(0, P - L) * remPct / 100;
@@ -1073,7 +1134,10 @@ function dirFlux(remPct, envInput) {
     const isTot = isc(Math.max(0, P - envRem - L));
     const divPool = Math.max(0, P - envRem - L - isTot);
     const qp = divPool * 0.01 * 0.25; // quote-part de frais 1 % taxée à l'IS
-    return { envAff: P, envRem, envDiv: Math.max(0, divPool - qp), isExt: isTot, qp };
+    // Taxe sur les salaires : même en intégration fiscale (neutre pour l'IS), les prestations facturées
+    // restent du CA soumis à TVA chez la holding et réduisent son rapport d'assujettissement.
+    const Fi = DIR.fees || 0;
+    return { envAff: P, envRem, envDiv: Math.max(0, divPool - qp), isExt: isTot, qp, tsRatio: tsRapport(Math.max(0, P - isTot - Fi), Fi) };
   }
   // Sans intégration : IS payé par chaque resto (un tronçon à 15 % chacun), remontée mère-fille (quote-part 5 %).
   // Un resto en perte ne paie pas d'IS mais ne remonte rien (report de déficit non modélisé) et sa perte
@@ -1092,7 +1156,7 @@ function dirFlux(remPct, envInput) {
   const pertes = Math.max(0, -DIR.r1 * ratio) + Math.max(0, -DIR.r2 * ratio);
   const dispo = Math.max(0, brutRemontee - qp + F - isHold - pertes);
   const envRemEff = Math.min(envRem, dispo);
-  return { envAff: P, envRem: envRemEff, envDiv: Math.max(0, dispo - envRemEff - L), isExt: isFilles + isHold, qp, horsDeduc: envRem + L > F + 0.01, fees: F };
+  return { envAff: P, envRem: envRemEff, envDiv: Math.max(0, dispo - envRemEff - L), isExt: isFilles + isHold, qp, horsDeduc: envRem + L > F + 0.01, fees: F, tsRatio: tsRapport(brutRemontee, F) };
 }
 
 function rendreDir() {
@@ -1103,7 +1167,7 @@ function rendreDir() {
   if (DIR.remontee) $("dirEnv").value = DIR.r1 + DIR.r2;
   const F = dirFlux(DIR.remPct, null);
   const envRem = F.envRem, envDiv = F.envDiv;
-  const S = dirCalc("SASU", envRem, envDiv, F.isExt), U = dirCalc("EURL", envRem, envDiv, F.isExt);
+  const S = dirCalc("SASU", envRem, envDiv, F.isExt, F.tsRatio), U = dirCalc("EURL", envRem, envDiv, F.isExt, F.tsRatio);
   DIR.env = F.envAff;
 
   $("dirSasu").textContent = eur(S.cash / 12, 0);
@@ -1111,14 +1175,14 @@ function rendreDir() {
   $("dirEurl").textContent = eur(U.cash / 12, 0);
   $("dirEurlSub").textContent = eur(U.cash, 0) + "/an en cash" + (U.bloque > 0 ? " + " + eur(U.bloque, 0) + " épargnés" : "") + " · " + ((U.total) / DIR.env * 100).toFixed(0) + " % de l'enveloppe";
 
-  // Curseurs des leviers : montants affichés et plafond PER dynamique (~10 % des revenus professionnels)
-  const perMax = Math.max(4710, Math.round(Math.max(S.netRem, U.netRem) * 0.10 / 250) * 250);
+  // Curseurs des leviers : montants affichés et plafond PER dynamique (celui du TNS est majoré)
+  const perMax = Math.max(4806, Math.round(Math.max(S.perPlaf, U.perPlaf) / 250) * 250);
   $("dirPER").max = perMax;
   if (DIR.per > perMax) { DIR.per = perMax; $("dirPER").value = perMax; }
   $("dirESv").textContent = eur(DIR.es, 0) + " / 47 580 €";
   $("dirPERv").textContent = eur(DIR.per, 0);
-  $("dirPERmax").textContent = "(plafond ~" + eur(perMax, 0) + ")";
-  $("dirCESUv").textContent = eur(DIR.cesu, 0) + " / 2 540 €";
+  $("dirPERmax").textContent = "(plafond ~" + eur(S.perPlaf, 0) + " SASU · ~" + eur(U.perPlaf, 0) + " EURL)";
+  $("dirCESUv").textContent = eur(DIR.cesu, 0) + " / 2 591 €";
   $("dirCCAv").textContent = eur(DIR.cca, 0) + " (intérêts " + eur(DIR.cca * 0.0433, 0) + "/an)";
   const depasseSeuil = U.cotisDiv > 0.5;
   $("dirCapSeuil").innerHTML = "EURL : dividendes <b>sans cotisations TNS jusqu'à " + eur(DIR.cap * 0.10, 0) + "/an</b> (10 % du capital)" + (depasseSeuil ? ' — <span style="color:var(--brique);font-weight:700">seuil dépassé à cette répartition</span>' : "");
@@ -1126,7 +1190,14 @@ function rendreDir() {
   // Alertes plafonds
   const al = [];
   if (DIR.es > 47580) al.push("Épargne salariale au-delà des plafonds cumulés (47 580 €/an : intéressement 36 045 + PEE 3 845 + PERECO 7 690).");
-  if (DIR.cesu > 2540) al.push("CESU au-delà du plafond exonéré (2 540 €/an) — l'excédent serait requalifié.");
+  if (DIR.cesu > 2591) al.push("CESU au-delà du plafond exonéré (2 591 €/an en 2026) — l'excédent serait requalifié.");
+  if (S.ts > 0.5) al.push("Taxe sur les salaires : la holding encaisse surtout des dividendes (hors champ TVA, rapport d'assujettissement " + Math.round((F.tsRatio || 0) * 100) + " %) → la rémunération du président de SASU supporte " + eur(S.ts, 0) + " de taxe sur les salaires (" + eur(S.ts * 0.75, 0) + " nets d'IS), à laquelle le gérant majoritaire TNS (EURL) échappe. Facturer davantage de prestations réelles avec TVA réduit ce rapport — exonération totale dès 90 % de CA soumis à TVA.");
+  if (S.puma > 0.5 || U.puma > 0.5) {
+    const q = [];
+    if (S.puma > 0.5) q.push(eur(S.puma, 0) + " en SASU");
+    if (U.puma > 0.5) q.push(eur(U.puma, 0) + " en EURL");
+    al.push("Taxe PUMa : à cette répartition, les revenus d'activité restent sous 9 612 € (20 % du PASS) avec plus de 24 030 € de revenus du capital → cotisation subsidiaire maladie de " + q.join(" · ") + " (art. L380-2 CSS, appel Urssaf en novembre). Une rémunération nette d'au moins 9 612 €/an l'annule entièrement — la cotisation est dégressive.");
+  }
   if (DIR.remontee && !DIR.integ && F.horsDeduc) al.push("Sans intégration fiscale, la part de rémunération et de leviers qui dépasse les prestations facturées par la holding est payée sur un résultat déjà imposé (déficit holding perdu). Augmente les prestations facturées (si elles sont réelles) ou opte pour l'intégration fiscale.");
   $("dirAlertes").hidden = !al.length;
   $("dirAlertes").textContent = al.length ? "⚠️ " + al.join(" ") : "";
@@ -1138,15 +1209,18 @@ function rendreDir() {
   d += tr2("Enveloppe rémunération" + (F.horsDeduc ? " (non déductible ⚠️)" : ""), envRem, envRem);
   d += tr2("Cotisations sociales", -S.cotis, -U.cotis);
   d += tr2("Rémunération nette (avant IR)", S.netRem, U.netRem);
+  if (S.ts > 0.5) d += tr2("Taxe sur les salaires de la holding (président SAS seulement, nette d'économie d'IS)", -S.ts * 0.75, 0);
   d += tr2(DIR.remontee ? "Dividendes distribuables (après IS)" : "Enveloppe dividendes", envDiv, envDiv);
   d += tr2(DIR.remontee ? (DIR.integ ? "IS du groupe intégré — 15 % ≤ 42 500 € puis 25 % (un seul tronçon à 15 % pour tout le groupe)" : "IS payé par les restos — 15 % ≤ 42 500 € puis 25 % (un tronçon à 15 % par société)") : "IS (15 % ≤ 42 500 €, puis 25 %)", -S.is, -U.is);
   if (F.qp > 0) d += tr2("Quote-part de frais mère-fille (" + (DIR.integ ? "1 %" : "5 %") + ")", -F.qp, -F.qp);
   if (U.cotisDiv > 0) d += tr2("Cotisations TNS sur dividendes > 10 % du capital (40 000 €)", 0, -U.cotisDiv);
   d += tr2("Dividendes nets d'impôts (" + (S.optionBareme ? "barème" : "flat tax") + " / " + (U.optionBareme ? "barème" : "flat tax") + ")", S.divNet, U.divNet);
   d += tr2("IR sur la rémunération (barème réel, " + DIR.parts.toLocaleString("fr-FR") + " parts)", -S.irRemPart, -U.irRemPart);
+  if (S.puma > 0.5 || U.puma > 0.5) d += tr2("Taxe PUMa — cotisation subsidiaire maladie (appel Urssaf en novembre)", -S.puma, -U.puma);
+  if (S.hr > 0.5 || U.hr > 0.5) d += tr2("CEHR + CDHR — hauts revenus (RFR > " + (DIR.parts >= 2 ? "500" : "250") + " k€, imposition minimale 20 %)", -S.hr, -U.hr);
   if (DIR.cca > 0) d += tr2("Intérêts de compte courant nets (4,33 %, flat tax)", S.ccaNet, U.ccaNet);
   if (DIR.cesu > 0) d += tr2("CESU préfinancé (0 charge, 0 IR)", DIR.cesu, DIR.cesu);
-  if (DIR.per > 0) d += tr2("PER versé (déduit de l'imposable, bloqué)", -DIR.per, -DIR.per);
+  if (DIR.per > 0) d += tr2("PER versé (déduit de l'imposable, bloqué" + ((S.perEff < DIR.per - 0.5 || U.perEff < DIR.per - 0.5) ? " — écrêté au plafond de chaque forme" : "") + ")", -S.perEff, -U.perEff);
   d += tr2("Cash disponible / an", S.cash, U.cash, "tot");
   d += tr2("Cash disponible / mois", S.cash / 12, U.cash / 12, "tot");
   if (S.bloque > 0) d += tr2("Épargne long terme (PEE net de CSG + PER)", S.bloque, U.bloque);
@@ -1157,7 +1231,7 @@ function rendreDir() {
   const lignes = [];
   for (let pc = 0; pc <= 100; pc += 10) {
     const f = dirFlux(pc, null);
-    const s = dirCalc("SASU", f.envRem, f.envDiv, f.isExt), u = dirCalc("EURL", f.envRem, f.envDiv, f.isExt);
+    const s = dirCalc("SASU", f.envRem, f.envDiv, f.isExt, f.tsRatio), u = dirCalc("EURL", f.envRem, f.envDiv, f.isExt, f.tsRatio);
     if (s.cash > bestS.v) bestS = { v: s.cash, pc };
     if (u.cash > bestU.v) bestU = { v: u.cash, pc };
     lignes.push({ pc, s: s.cash, u: u.cash });
@@ -1173,7 +1247,7 @@ function rendreDir() {
   $("dirObjCard").hidden = !(DIR.obj > 0);
   if (DIR.obj > 0) {
     const chercher = (forme) => {
-      const cashMax = (env) => { let m = -1; for (let pc = 0; pc <= 100; pc += 5) { const f = dirFlux(pc, env); const c = dirCalc(forme, f.envRem, f.envDiv, f.isExt); if (c.cash > m) m = c.cash; } return m / 12; };
+      const cashMax = (env) => { let m = -1; for (let pc = 0; pc <= 100; pc += 5) { const f = dirFlux(pc, env); const c = dirCalc(forme, f.envRem, f.envDiv, f.isExt, f.tsRatio); if (c.cash > m) m = c.cash; } return m / 12; };
       let lo = 0, hi = 1500000;
       for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; (cashMax(m) < DIR.obj) ? lo = m : hi = m; }
       return lo;
