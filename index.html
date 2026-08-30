@@ -112,12 +112,14 @@
   }
   /* Commentaires longs : un cran plus lisibles partout… */
   .aside { font-size:12.5px; color:var(--gris); line-height:1.6; }
-  /* …et sur grand écran, en colonne de droite, en face des réglages qu'ils expliquent */
+  /* …et sur grand écran, en colonne de droite (notes en marge flottantes : le contenu
+     de gauche coule sans trous, chaque commentaire se cale à la hauteur de sa section) */
   @media (min-width:1280px){
-    #panel-dir { display:grid; grid-template-columns:minmax(0,1fr) 330px; column-gap:30px; align-items:start; }
-    #panel-dir > * { grid-column:1; min-width:0; }
-    #panel-dir > .aside { grid-column:2; margin:0 0 6px; font-size:13px; background:var(--cg-paper-2); border-left:3px solid var(--cg-line-strong); border-radius:0 10px 10px 0; padding:11px 14px; }
-    #panel-dir > .note-i, #panel-dir > h2, #panel-dir > .cles, #panel-dir > .ratiocard, #panel-dir > div[style*="overflow-x"] { grid-column:1 / -1; }
+    #panel-dir { padding-right:362px; }
+    #panel-dir::after { content:""; display:block; clear:both; }
+    #panel-dir > .aside { float:right; clear:right; width:332px; box-sizing:border-box; margin:0 -362px 14px 0;
+      font-size:13px; background:var(--cg-paper-2); border-left:3px solid var(--cg-line-strong);
+      border-radius:0 10px 10px 0; padding:11px 14px; }
   }
   .eqline { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; padding:9px 0; border-bottom:1px solid var(--cg-line); }
   .eqline > div { display:flex; flex-direction:column; }
@@ -323,7 +325,7 @@
 </div>
 
 <div id="panel-dir" hidden>
-  <p class="note-i">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %). L'outil intègre aussi la <b>taxe PUMa</b> (cotisation subsidiaire maladie, art. L380-2 CSS — vise le « tout dividendes » avec moins de 9 612 € de rémunération) et la <b>CEHR + CDHR</b> (imposition minimale 20 % au-delà de 250 k€ / 500 k€ de RFR), ainsi que la <b>taxe sur les salaires</b> de la holding (due sur la rémunération du président de SAS quand la holding vit de dividendes hors TVA — le gérant TNS y échappe), la <b>CSG déductible à 6,8 %</b> en option barème et le <b>plafond PER majoré du TNS</b>.</p>
+  <p class="note-i aside">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %). L'outil intègre aussi la <b>taxe PUMa</b> (cotisation subsidiaire maladie, art. L380-2 CSS — vise le « tout dividendes » avec moins de 9 612 € de rémunération) et la <b>CEHR + CDHR</b> (imposition minimale 20 % au-delà de 250 k€ / 500 k€ de RFR), ainsi que la <b>taxe sur les salaires</b> de la holding (due sur la rémunération du président de SAS quand la holding vit de dividendes hors TVA — le gérant TNS y échappe), la <b>CSG déductible à 6,8 %</b> en option barème et le <b>plafond PER majoré du TNS</b>.</p>
 
   <div class="rang" style="margin-top:12px">
     <label class="check"><input type="checkbox" id="dirRemontee"> Calculer depuis les résultats des restos</label>
@@ -332,12 +334,11 @@
   <div class="rang" id="dirRemonteeWrap" hidden>
     <div><label class="txt">Résultat avant IS — Châteaudun (€/an, négatif si perte)</label><input type="number" id="dirR1" step="5000" style="width:105px"></div>
     <div><label class="txt">Résultat avant IS — Laborde (€/an, négatif si perte)</label><input type="number" id="dirR2" step="5000" style="width:105px"></div>
-    <button class="btn-add" id="dirSync" type="button" style="margin-top:0">↺ Récupérer depuis le Pilotage</button>
+    <div><label class="txt">Résultat avant IS — Sèze (€/an, négatif si perte)</label><input type="number" id="dirR3" step="5000" style="width:105px"></div>
     <div><label class="txt">Prestations facturées par la holding (€/an)</label><input type="number" id="dirFees" step="5000" min="0" style="width:105px"></div>
   </div>
-  <p class="src" id="dirSyncInfo" hidden></p>
   <p class="src aside" id="dirFeesNote" hidden>⚠️ <b>Facturation holding → restos</b> : uniquement pour des <b>prestations réelles et distinctes du mandat social</b> (compta, RH, achats, marketing…), avec convention écrite et prix de marché — la Cour de cassation (juin 2026) requalifie les management fees qui rémunèrent la fonction de dirigeant. <b>En intégration fiscale, cette facturation est fiscalement neutre</b> (même résultat de groupe) : son intérêt est ailleurs (trésorerie régulière de la holding sans attendre les dividendes). <b>Hors intégration</b>, elle rend ta rémunération déductible chez la holding à hauteur des prestations facturées, et la holding dispose de son propre tronçon d'IS à 15 %.</p>
-  <p class="src aside" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu. <b>Si un resto est en perte</b> : en intégration fiscale, sa perte s'impute immédiatement sur le bénéfice de l'autre (moins d'IS de groupe) ; sans intégration, elle est seulement reportée sur ses bénéfices futurs (non modélisé ici) et ce resto ne remonte aucun dividende.</p>
+  <p class="src aside" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu. <b>Si un resto est en perte</b> : en intégration fiscale, sa perte s'impute immédiatement sur le bénéfice des autres (moins d'IS de groupe) ; sans intégration, elle est seulement reportée sur ses bénéfices futurs (non modélisé ici) et ce resto ne remonte aucun dividende.</p>
   <div class="rang" style="margin-top:12px">
     <div><label class="txt">Enveloppe annuelle (€, avant IS)</label><input type="number" id="dirEnv" step="5000" min="0" style="width:110px"></div>
     <div><label class="txt">Part en rémunération %</label><input type="number" id="dirRem" step="5" min="0" max="100" style="width:75px"></div>
@@ -1006,7 +1007,7 @@ document.querySelectorAll(".tab").forEach(t => {
 });
 
 // ============ ONGLET DIRIGEANT ============
-const DIR = { env: 150000, remPct: 50, cap: 400000, parts: 2.5, autres: 0, es: 0, per: 0, cesu: 0, cca: 0, obj: 0, remontee: false, integ: true, r1: 80000, r2: 80000, fees: 0 };
+const DIR = { env: 150000, remPct: 50, cap: 400000, parts: 2.5, autres: 0, es: 0, per: 0, cesu: 0, cca: 0, obj: 0, remontee: false, integ: true, r1: 80000, r2: 80000, r3: 0, fees: 0 };
 const isc = (b) => Math.min(Math.max(0, b), 42500) * 0.15 + Math.max(0, b - 42500) * 0.25;
 try { const o = JSON.parse(localStorage.getItem("paie-dirigeant") || "null"); if (o) Object.assign(DIR, o); } catch (e) {}
 function sauverDir() { try { localStorage.setItem("paie-dirigeant", JSON.stringify(DIR)); } catch (e) {} }
@@ -1136,7 +1137,7 @@ function dirFlux(remPct, envInput) {
     // Mode simple : la société d'exploitation (resto) a un CA soumis à TVA ≥ 90 % → pas de taxe sur les salaires.
     return { envAff, envRem, envDiv: envTotal - envRem, isExt: null, qp: 0, tsRatio: 0 };
   }
-  const P = envInput != null ? envInput : (DIR.r1 + DIR.r2);
+  const P = envInput != null ? envInput : (DIR.r1 + DIR.r2 + DIR.r3);
   const envRem = Math.max(0, P - L) * remPct / 100;
   if (DIR.integ) {
     // Intégration fiscale : rémunération et leviers déductibles du résultat du groupe, un seul seuil d'IS à 15 %.
@@ -1150,19 +1151,20 @@ function dirFlux(remPct, envInput) {
   }
   // Sans intégration : IS payé par chaque resto (un tronçon à 15 % chacun), remontée mère-fille (quote-part 5 %).
   // Un resto en perte ne paie pas d'IS mais ne remonte rien (report de déficit non modélisé) et sa perte
-  // ne réduit pas l'IS de l'autre. Les prestations facturées ciblent les restos bénéficiaires.
-  const tot = DIR.r1 + DIR.r2, ratio = tot !== 0 ? P / tot : 1;
-  const posTot = Math.max(0, DIR.r1) + Math.max(0, DIR.r2);
-  const F = Math.min(DIR.fees || 0, Math.max(0, posTot * ratio));
-  const f1 = posTot > 0 ? F * Math.max(0, DIR.r1) / posTot : 0, f2 = F - f1;
-  const is1 = isc(Math.max(0, (DIR.r1 * ratio) - f1)), is2 = isc(Math.max(0, (DIR.r2 * ratio) - f2));
-  const isFilles = is1 + is2;
-  const brutRemontee = Math.max(0, (DIR.r1 * ratio) - f1 - is1) + Math.max(0, (DIR.r2 * ratio) - f2 - is2);
+  // ne réduit pas l'IS des autres. Les prestations facturées ciblent les restos bénéficiaires.
+  const tot = DIR.r1 + DIR.r2 + DIR.r3, ratio = tot !== 0 ? P / tot : 1;
+  const rs = [DIR.r1, DIR.r2, DIR.r3].map(r => r * ratio);
+  const posTot = rs.reduce((s, r) => s + Math.max(0, r), 0);
+  const F = Math.min(DIR.fees || 0, Math.max(0, posTot));
+  const fs = rs.map(r => posTot > 0 ? F * Math.max(0, r) / posTot : 0);
+  const isParts = rs.map((r, i) => isc(Math.max(0, r - fs[i])));
+  const isFilles = isParts.reduce((a, b) => a + b, 0);
+  const brutRemontee = rs.reduce((s, r, i) => s + Math.max(0, r - fs[i] - isParts[i]), 0);
   const qp = brutRemontee * 0.05 * 0.15;
   const isHold = isc(Math.max(0, F - envRem - L));
   // La perte d'un resto brûle du cash qui doit être financé par le groupe : elle réduit le distribuable
   // même sans intégration (seule l'économie d'IS diffère entre les deux régimes).
-  const pertes = Math.max(0, -DIR.r1 * ratio) + Math.max(0, -DIR.r2 * ratio);
+  const pertes = rs.reduce((s, r) => s + Math.max(0, -r), 0);
   const dispo = Math.max(0, brutRemontee - qp + F - isHold - pertes);
   const envRemEff = Math.min(envRem, dispo);
   return { envAff: P, envRem: envRemEff, envDiv: Math.max(0, dispo - envRemEff - L), isExt: isFilles + isHold, qp, horsDeduc: envRem + L > F + 0.01, fees: F, tsRatio: tsRapport(brutRemontee, F) };
@@ -1173,7 +1175,7 @@ function rendreDir() {
   $("dirRemonteeNote").hidden = !DIR.remontee;
   $("dirFeesNote").hidden = !(DIR.remontee && DIR.fees > 0);
   $("dirEnv").disabled = DIR.remontee;
-  if (DIR.remontee) $("dirEnv").value = DIR.r1 + DIR.r2;
+  if (DIR.remontee) $("dirEnv").value = DIR.r1 + DIR.r2 + DIR.r3;
   const F = dirFlux(DIR.remPct, null);
   const envRem = F.envRem, envDiv = F.envDiv;
   const S = dirCalc("SASU", envRem, envDiv, F.isExt, F.tsRatio), U = dirCalc("EURL", envRem, envDiv, F.isExt, F.tsRatio);
@@ -1213,7 +1215,7 @@ function rendreDir() {
 
   const tr2 = (lib, a, b, cls) => "<tr" + (cls ? ' class="' + cls + '"' : "") + "><td>" + lib + "</td><td>" + eur(a, 0) + "</td><td>" + eur(b, 0) + "</td></tr>";
   let d = "<thead><tr><th></th><th>Holding SASU</th><th>Holding EURL</th></tr></thead><tbody>";
-  if (DIR.remontee) d += tr2("Résultat des restos avant IS" + ((DIR.r1 < 0 || DIR.r2 < 0) ? " (net de la perte)" : ""), F.envAff, F.envAff);
+  if (DIR.remontee) d += tr2("Résultat des restos avant IS" + ((DIR.r1 < 0 || DIR.r2 < 0 || DIR.r3 < 0) ? " (net de la perte)" : ""), F.envAff, F.envAff);
   if (DIR.remontee && F.fees > 0) d += tr2("Prestations facturées par la holding" + (DIR.integ ? " (neutre en intégration)" : ""), F.fees, F.fees);
   d += tr2("Enveloppe rémunération" + (F.horsDeduc ? " (non déductible ⚠️)" : ""), envRem, envRem);
   d += tr2("Cotisations sociales", -S.cotis, -U.cotis);
@@ -1272,7 +1274,7 @@ function rendreDir() {
   $(id).value = DIR[cle];
   $(id).oninput = () => {
     // En mode « depuis les restos », l'enveloppe est calculée : toute saisie manuelle est ignorée.
-    if (cle === "env" && DIR.remontee) { $(id).value = DIR.r1 + DIR.r2; return; }
+    if (cle === "env" && DIR.remontee) { $(id).value = DIR.r1 + DIR.r2 + DIR.r3; return; }
     DIR[cle] = Math.max(0, parseFloat($(id).value) || 0);
     if (cle === "remPct") DIR[cle] = Math.min(100, DIR[cle]);
     sauverDir(); rendreDir();
@@ -1280,51 +1282,15 @@ function rendreDir() {
 });
 $("dirParts").value = DIR.parts;
 $("dirParts").onchange = () => { DIR.parts = parseFloat($("dirParts").value) || 2; sauverDir(); rendreDir(); };
-[["dirR1","r1"],["dirR2","r2"],["dirFees","fees"]].forEach(([id,cle]) => {
+[["dirR1","r1"],["dirR2","r2"],["dirR3","r3"],["dirFees","fees"]].forEach(([id,cle]) => {
   $(id).value = DIR[cle];
-  // r1/r2 peuvent être négatifs (resto en perte) ; les prestations facturées restent positives.
+  // r1/r2/r3 peuvent être négatifs (resto en perte) ; les prestations facturées restent positives.
   $(id).oninput = () => { const v = parseFloat($(id).value) || 0; DIR[cle] = cle === "fees" ? Math.max(0, v) : v; sauverDir(); rendreDir(); };
 });
 $("dirRemontee").checked = DIR.remontee;
 $("dirRemontee").onchange = () => { DIR.remontee = $("dirRemontee").checked; sauverDir(); rendreDir(); };
 $("dirInteg").checked = DIR.integ;
 $("dirInteg").onchange = () => { DIR.integ = $("dirInteg").checked; sauverDir(); rendreDir(); };
-
-// Récupération du réel comptable depuis la base du Pilotage (cr_lignes : balance Pennylane par site × mois × compte).
-// Clé anonyme publique de la base Dashboard — la même que celle embarquée dans le Pilotage côté client.
-const DASH_SB = "https://txizebrslijdumfdcaby.supabase.co";
-const DASH_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4aXplYnJzbGlqZHVtZmRjYWJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMTY0MTUsImV4cCI6MjA5NjY5MjQxNX0.CCiXd3ISsE5spuuzOAM-PZ9ptCVJXdVwcqCHFfUuZ3E";
-$("dirSync").onclick = async () => {
-  $("dirSync").disabled = true; $("dirSync").textContent = "Récupération…";
-  try {
-    const now = new Date();
-    const cur = now.toISOString().slice(0, 7);
-    const dep = new Date(now.getFullYear() - 1, now.getMonth(), 1).toISOString().slice(0, 7);
-    const r = await fetch(DASH_SB + "/rest/v1/cr_lignes?select=site_id,mois,compte,montant&mois=gte." + dep + "&mois=lt." + cur + "&limit=100000",
-      { headers: { apikey: DASH_KEY, Authorization: "Bearer " + DASH_KEY } });
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const lignes = await r.json();
-    const agg = {};
-    for (const l of lignes) {
-      const c = String(l.compte || "");
-      if (!agg[l.site_id]) agg[l.site_id] = { mois: new Set(), res: 0 };
-      if (c.startsWith("7")) { agg[l.site_id].res += +l.montant; agg[l.site_id].mois.add(l.mois); }
-      else if (c.startsWith("6") && !c.startsWith("69")) { agg[l.site_id].res -= +l.montant; agg[l.site_id].mois.add(l.mois); }
-    }
-    if (!agg.cd9 && !agg.lb8) throw new Error("aucune ligne comptable");
-    const annualise = (a) => a && a.mois.size ? Math.round(a.res * 12 / a.mois.size) : 0;
-    const r1 = annualise(agg.cd9), r2 = annualise(agg.lb8);
-    DIR.r1 = r1; DIR.r2 = r2; DIR.remontee = true;
-    $("dirR1").value = DIR.r1; $("dirR2").value = DIR.r2; $("dirRemontee").checked = true;
-    $("dirSyncInfo").hidden = false;
-    $("dirSyncInfo").textContent = "Réel comptable du Pilotage, annualisé (mois en cours exclu — " + (agg.cd9 ? agg.cd9.mois.size : 0) + " mois Châteaudun, " + (agg.lb8 ? agg.lb8.mois.size : 0) + " mois Laborde) : Châteaudun " + eur(r1, 0) + (r1 < 0 ? " (perte)" : "") + " · Laborde " + eur(r2, 0) + (r2 < 0 ? " (perte)" : "") + ". Résultat avant IS, avant ta future rémunération et avant les changements d'équipe — ajuste à la main si besoin.";
-    sauverDir(); rendreDir();
-  } catch (e) {
-    $("dirSyncInfo").hidden = false;
-    $("dirSyncInfo").textContent = "⚠️ Impossible de lire la base du Pilotage (" + e.message + "). Saisis les résultats à la main.";
-  }
-  $("dirSync").disabled = false; $("dirSync").textContent = "↺ Récupérer depuis le Pilotage";
-};
 
 rendre();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("service-worker.js").catch(() => {});
