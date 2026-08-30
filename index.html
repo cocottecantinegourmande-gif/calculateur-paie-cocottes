@@ -314,7 +314,7 @@
 </div>
 
 <div id="panel-dir" hidden>
-  <p class="note-i">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %).</p>
+  <p class="note-i">Compare la rémunération du dirigeant en <b>SASU (président assimilé salarié)</b> et en <b>EURL (gérant TNS)</b> : tu fixes l'enveloppe annuelle que la société peut consacrer à ta rémunération (avant IS), et l'outil montre ce qui arrive dans ta poche selon la répartition salaire / dividendes. Barèmes 2026 : flat tax 31,4 %, IS 15 % jusqu'à 42 500 € puis 25 %, réforme TNS (abattement d'assiette 26 %). L'outil intègre aussi la <b>taxe PUMa</b> (cotisation subsidiaire maladie, art. L380-2 CSS — vise le « tout dividendes » avec moins de 9 612 € de rémunération) et la <b>CEHR + CDHR</b> (imposition minimale 20 % au-delà de 250 k€ / 500 k€ de RFR).</p>
 
   <div class="rang" style="margin-top:12px">
     <label class="check"><input type="checkbox" id="dirRemontee"> Calculer depuis les résultats des restos</label>
@@ -1016,6 +1016,26 @@ function irBareme(rni, parts) {
 // EURL TNS (réforme 2026, abattement d'assiette 26 %) : cotisations ≈ 30 % de l'enveloppe, minimum ≈ 1 300 €/an.
 // Dividendes : IS 15 %/25 % puis PFU 31,4 % OU option barème (abattement 40 % + PS 18,6 %) — l'outil prend le plus favorable.
 // EURL : fraction > 10 % du capital soumise aux cotisations TNS (~30 %) au lieu des PS.
+
+// Taxe PUMa — cotisation subsidiaire maladie (art. L380-2 CSS, formule Urssaf) : due si revenus d'activité < 20 % du PASS
+// (9 612 €) ET revenus du capital > 50 % du PASS (24 030 €). Dégressive : 6,5 % × (A − 0,5 PASS) × (1 − R / 0,2 PASS),
+// A plafonné à 8 PASS. Nulle dès 9 612 € de revenus d'activité. PASS 2026 : 48 060 €. Appel Urssaf en novembre N+1.
+function pumaCalc(rAct, rCap) {
+  const PASS = 48060;
+  if (rAct >= 0.20 * PASS || rCap <= 0.50 * PASS) return 0;
+  return 0.065 * (Math.min(rCap, 8 * PASS) - 0.50 * PASS) * (1 - rAct / (0.20 * PASS));
+}
+
+// CEHR (art. 223 sexies CGI : 3 % puis 4 %) + CDHR (art. 224 CGI, LF 2025 reconduite LF 2026 : imposition minimale
+// de 20 % du RFR). Seuils : 250 k€ (personne seule) / 500 k€ (couple), décote d'entrée jusqu'à 330 k€ / 660 k€.
+// L'IR comparé au plancher de 20 % est l'IR hors prélèvements sociaux, CEHR incluse.
+function hautsRevenus(rfr, ir) {
+  const couple = DIR.parts >= 2, s = couple ? 500000 : 250000;
+  const cehr = Math.max(0, Math.min(rfr, 2 * s) - s) * 0.03 + Math.max(0, rfr - 2 * s) * 0.04;
+  const cdhr = rfr > s ? Math.max(0, Math.min(0.20 * rfr, 0.825 * (rfr - s)) - (ir + cehr)) : 0;
+  return cehr + cdhr;
+}
+
 function dirCalc(forme, envRem, envDiv, isExt) {
   const PMSSA = 48060;
   let brut = 0, netRem = 0, cotis = 0;
@@ -1048,11 +1068,20 @@ function dirCalc(forme, envRem, envDiv, isExt) {
   // Option 2 — barème sur les dividendes (abattement 40 %, PS 18,6 % sur la part hors TNS)
   const irBar = irBareme(baseFoyer + (sous + Math.max(0, sur - cotisDiv)) * 0.60, DIR.parts) + sous * 0.186;
   const optionBareme = irBar < irPFU;
-  const divNet = sous + Math.max(0, sur - cotisDiv) - (optionBareme ? (irBar - irBareme(baseFoyer, DIR.parts)) : (sous * 0.314 + Math.max(0, sur - cotisDiv) * 0.128));
+  const divTaxable = sous + Math.max(0, sur - cotisDiv);
+  const divNet = divTaxable - (optionBareme ? (irBar - irBareme(baseFoyer, DIR.parts)) : (sous * 0.314 + Math.max(0, sur - cotisDiv) * 0.128));
   const irRemPart = Math.max(0, irBareme(baseFoyer, DIR.parts) - irAutres);
-  const cash = netRem - DIR.per + divNet + ccaNet + DIR.cesu - irRemPart;
+  // PUMa : revenus d'activité = rémunération nette (+ fraction TNS des dividendes en EURL, déjà dans l'assiette
+  // des cotisations) ; revenus du capital = dividendes hors fraction TNS + intérêts de compte courant.
+  const puma = pumaCalc(netRem + (forme === "EURL" ? sur : 0), (forme === "EURL" ? sous : divBrut) + ccaInt);
+  // CEHR/CDHR : calculées sur le RFR du foyer (dividendes avant abattement de 40 %), mais on n'impute au dirigeant
+  // que la part que ses revenus déclenchent — même logique que irRemPart pour les « autres revenus ».
+  const irCap = (optionBareme ? irBareme(baseFoyer + divTaxable * 0.60, DIR.parts) - irBareme(baseFoyer, DIR.parts) : divTaxable * 0.128) + ccaInt * 0.128;
+  const rfr = baseFoyer + divTaxable + ccaInt;
+  const hr = Math.max(0, hautsRevenus(rfr, irBareme(baseFoyer, DIR.parts) + irCap) - hautsRevenus(DIR.autres, irAutres));
+  const cash = netRem - DIR.per + divNet + ccaNet + DIR.cesu - irRemPart - puma - hr;
   const bloque = DIR.es * 0.903 + DIR.per;
-  return { brut, netRem, cotis, is, divBrut, cotisDiv, divNet, ccaInt, ccaNet, optionBareme, irRemPart, cash, bloque, total: cash + bloque };
+  return { brut, netRem, cotis, is, divBrut, cotisDiv, divNet, ccaInt, ccaNet, optionBareme, irRemPart, puma, hr, cash, bloque, total: cash + bloque };
 }
 
 function dirEnvLeviers() { return DIR.es + DIR.cesu + DIR.cca * 0.0433; }
@@ -1127,6 +1156,12 @@ function rendreDir() {
   const al = [];
   if (DIR.es > 47580) al.push("Épargne salariale au-delà des plafonds cumulés (47 580 €/an : intéressement 36 045 + PEE 3 845 + PERECO 7 690).");
   if (DIR.cesu > 2540) al.push("CESU au-delà du plafond exonéré (2 540 €/an) — l'excédent serait requalifié.");
+  if (S.puma > 0.5 || U.puma > 0.5) {
+    const q = [];
+    if (S.puma > 0.5) q.push(eur(S.puma, 0) + " en SASU");
+    if (U.puma > 0.5) q.push(eur(U.puma, 0) + " en EURL");
+    al.push("Taxe PUMa : à cette répartition, les revenus d'activité restent sous 9 612 € (20 % du PASS) avec plus de 24 030 € de revenus du capital → cotisation subsidiaire maladie de " + q.join(" · ") + " (art. L380-2 CSS, appel Urssaf en novembre). Une rémunération nette d'au moins 9 612 €/an l'annule entièrement — la cotisation est dégressive.");
+  }
   if (DIR.remontee && !DIR.integ && F.horsDeduc) al.push("Sans intégration fiscale, la part de rémunération et de leviers qui dépasse les prestations facturées par la holding est payée sur un résultat déjà imposé (déficit holding perdu). Augmente les prestations facturées (si elles sont réelles) ou opte pour l'intégration fiscale.");
   $("dirAlertes").hidden = !al.length;
   $("dirAlertes").textContent = al.length ? "⚠️ " + al.join(" ") : "";
@@ -1144,6 +1179,8 @@ function rendreDir() {
   if (U.cotisDiv > 0) d += tr2("Cotisations TNS sur dividendes > 10 % du capital (40 000 €)", 0, -U.cotisDiv);
   d += tr2("Dividendes nets d'impôts (" + (S.optionBareme ? "barème" : "flat tax") + " / " + (U.optionBareme ? "barème" : "flat tax") + ")", S.divNet, U.divNet);
   d += tr2("IR sur la rémunération (barème réel, " + DIR.parts.toLocaleString("fr-FR") + " parts)", -S.irRemPart, -U.irRemPart);
+  if (S.puma > 0.5 || U.puma > 0.5) d += tr2("Taxe PUMa — cotisation subsidiaire maladie (appel Urssaf en novembre)", -S.puma, -U.puma);
+  if (S.hr > 0.5 || U.hr > 0.5) d += tr2("CEHR + CDHR — hauts revenus (RFR > " + (DIR.parts >= 2 ? "500" : "250") + " k€, imposition minimale 20 %)", -S.hr, -U.hr);
   if (DIR.cca > 0) d += tr2("Intérêts de compte courant nets (4,33 %, flat tax)", S.ccaNet, U.ccaNet);
   if (DIR.cesu > 0) d += tr2("CESU préfinancé (0 charge, 0 IR)", DIR.cesu, DIR.cesu);
   if (DIR.per > 0) d += tr2("PER versé (déduit de l'imposable, bloqué)", -DIR.per, -DIR.per);
