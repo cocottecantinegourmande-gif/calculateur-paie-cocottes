@@ -1013,7 +1013,8 @@ function irBareme(rni, parts) {
 }
 
 // SASU assimilé salarié : ~40 % patronal / 22 % salarial T1 (PMSS 48 060 €/an), ~36 % / 23 % T2 — sans chômage ni AGS.
-// EURL TNS (réforme 2026, abattement d'assiette 26 %) : cotisations ≈ 30 % de l'enveloppe, minimum ≈ 1 300 €/an.
+// EURL TNS (réforme 2026, abattement d'assiette 26 %) : cotisations ≈ 30 % de l'enveloppe, minimales ≈ 1 135 €/an
+// (retraite de base ~967 € + IJ ~96 € + invalidité-décès ~72 €, assiettes 2026 vérifiées).
 // Dividendes : IS 15 %/25 % puis PFU 31,4 % OU option barème (abattement 40 % + PS 18,6 %) — l'outil prend le plus favorable.
 // EURL : fraction > 10 % du capital soumise aux cotisations TNS (~30 %) au lieu des PS.
 
@@ -1039,10 +1040,10 @@ function hautsRevenus(rfr, ir) {
 // Taxe sur les salaires (art. 231 CGI) : due par l'employeur dont moins de 90 % du CA est soumis à TVA —
 // cas de la holding qui vit de dividendes. Assiette : rémunération du président de SAS (assimilé salarié,
 // CE 19 juin 2017) ; le gérant majoritaire TNS en est exclu. Barème annuel 2026 : 4,25 % ≤ 9 229 €,
-// 8,5 % jusqu'à 18 422 €, 13,6 % au-delà, × rapport d'assujettissement. Franchise 1 200 €, décote à 2 040 €.
+// 8,5 % jusqu'à 18 423 €, 13,6 % au-delà, × rapport d'assujettissement. Franchise 1 200 €, décote à 2 040 €.
 function tsCalc(brut, ratio) {
   if (!ratio || ratio <= 0 || brut <= 0) return 0;
-  const t = (Math.min(brut, 9229) * 0.0425 + Math.max(0, Math.min(brut, 18422) - 9229) * 0.085 + Math.max(0, brut - 18422) * 0.136) * ratio;
+  const t = (Math.min(brut, 9229) * 0.0425 + Math.max(0, Math.min(brut, 18423) - 9229) * 0.085 + Math.max(0, brut - 18423) * 0.136) * ratio;
   if (t <= 1200) return 0;
   if (t <= 2040) return t - 0.75 * (2040 - t);
   return t;
@@ -1066,7 +1067,7 @@ function dirCalc(forme, envRem, envDiv, isExt, tsRatio) {
     netRem = t1 * 0.78 + t2 * 0.77;
     cotis = envRem - netRem;
   } else {
-    cotis = envRem > 0 ? Math.max(envRem * 0.30, Math.min(envRem, 1300)) : 0;
+    cotis = envRem > 0 ? Math.max(envRem * 0.30, Math.min(envRem, 1135)) : 0;
     netRem = envRem - cotis;
   }
   // isExt != null : mode remontée — l'IS a déjà été payé (filles ou groupe), envDiv est déjà net d'IS.
@@ -1089,7 +1090,7 @@ function dirCalc(forme, envRem, envDiv, isExt, tsRatio) {
   const b8 = Math.min(netRem, 8 * PMSSA);
   const perPlaf = Math.max(4806, forme === "EURL" ? b8 * 0.10 + Math.max(0, b8 - PMSSA) * 0.15 : netRem * 0.10);
   const perEff = Math.min(DIR.per, perPlaf);
-  const imposableRem = Math.max(0, netRem - Math.min(netRem * 0.10, 14426) - perEff);
+  const imposableRem = Math.max(0, netRem - Math.min(netRem * 0.10, 14555) - perEff);
   const baseFoyer = imposableRem + DIR.autres;
   const irAutres = irBareme(DIR.autres, DIR.parts);
   const divTaxable = sous + Math.max(0, sur - cotisDiv);
