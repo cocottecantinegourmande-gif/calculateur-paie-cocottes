@@ -110,6 +110,15 @@
     .tab { flex:none; text-align:left; padding:13px 16px; border:1px solid var(--bord); border-radius:12px; }
     .tab.on { box-shadow:inset 4px 0 0 var(--orange); }
   }
+  /* Commentaires longs : un cran plus lisibles partout… */
+  .aside { font-size:12.5px; color:var(--gris); line-height:1.6; }
+  /* …et sur grand écran, en colonne de droite, en face des réglages qu'ils expliquent */
+  @media (min-width:1280px){
+    #panel-dir { display:grid; grid-template-columns:minmax(0,1fr) 330px; column-gap:30px; align-items:start; }
+    #panel-dir > * { grid-column:1; min-width:0; }
+    #panel-dir > .aside { grid-column:2; margin:0 0 6px; font-size:13px; background:var(--cg-paper-2); border-left:3px solid var(--cg-line-strong); border-radius:0 10px 10px 0; padding:11px 14px; }
+    #panel-dir > .note-i, #panel-dir > h2, #panel-dir > .cles, #panel-dir > .ratiocard, #panel-dir > div[style*="overflow-x"] { grid-column:1 / -1; }
+  }
   .eqline { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; padding:9px 0; border-bottom:1px solid var(--cg-line); }
   .eqline > div { display:flex; flex-direction:column; }
   .eqline .eqposte { flex:1; }
@@ -327,8 +336,8 @@
     <div><label class="txt">Prestations facturées par la holding (€/an)</label><input type="number" id="dirFees" step="5000" min="0" style="width:105px"></div>
   </div>
   <p class="src" id="dirSyncInfo" hidden></p>
-  <p class="src" id="dirFeesNote" hidden>⚠️ <b>Facturation holding → restos</b> : uniquement pour des <b>prestations réelles et distinctes du mandat social</b> (compta, RH, achats, marketing…), avec convention écrite et prix de marché — la Cour de cassation (juin 2026) requalifie les management fees qui rémunèrent la fonction de dirigeant. <b>En intégration fiscale, cette facturation est fiscalement neutre</b> (même résultat de groupe) : son intérêt est ailleurs (trésorerie régulière de la holding sans attendre les dividendes). <b>Hors intégration</b>, elle rend ta rémunération déductible chez la holding à hauteur des prestations facturées, et la holding dispose de son propre tronçon d'IS à 15 %.</p>
-  <p class="src" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu. <b>Si un resto est en perte</b> : en intégration fiscale, sa perte s'impute immédiatement sur le bénéfice de l'autre (moins d'IS de groupe) ; sans intégration, elle est seulement reportée sur ses bénéfices futurs (non modélisé ici) et ce resto ne remonte aucun dividende.</p>
+  <p class="src aside" id="dirFeesNote" hidden>⚠️ <b>Facturation holding → restos</b> : uniquement pour des <b>prestations réelles et distinctes du mandat social</b> (compta, RH, achats, marketing…), avec convention écrite et prix de marché — la Cour de cassation (juin 2026) requalifie les management fees qui rémunèrent la fonction de dirigeant. <b>En intégration fiscale, cette facturation est fiscalement neutre</b> (même résultat de groupe) : son intérêt est ailleurs (trésorerie régulière de la holding sans attendre les dividendes). <b>Hors intégration</b>, elle rend ta rémunération déductible chez la holding à hauteur des prestations facturées, et la holding dispose de son propre tronçon d'IS à 15 %.</p>
+  <p class="src aside" id="dirRemonteeNote" hidden>Régime mère-fille : les dividendes remontés des SAS vers la holding sont exonérés d'IS chez la mère, hors quote-part de frais de 5 % (1 % en intégration fiscale). <b>Avec intégration fiscale</b> : la rémunération que te verse la holding est déductible du résultat du groupe, mais le taux réduit d'IS à 15 % ne s'applique qu'une seule fois (42 500 € pour tout le groupe au lieu de 42 500 € par société). <b>Sans intégration</b> : chaque resto garde son seuil à 15 %, mais ta rémunération est payée sur du résultat déjà imposé et le déficit de la holding est perdu. <b>Si un resto est en perte</b> : en intégration fiscale, sa perte s'impute immédiatement sur le bénéfice de l'autre (moins d'IS de groupe) ; sans intégration, elle est seulement reportée sur ses bénéfices futurs (non modélisé ici) et ce resto ne remonte aucun dividende.</p>
   <div class="rang" style="margin-top:12px">
     <div><label class="txt">Enveloppe annuelle (€, avant IS)</label><input type="number" id="dirEnv" step="5000" min="0" style="width:110px"></div>
     <div><label class="txt">Part en rémunération %</label><input type="number" id="dirRem" step="5" min="0" max="100" style="width:75px"></div>
@@ -341,7 +350,7 @@
     </div>
     <div><label class="txt">Autres revenus imposables du foyer / an (€)</label><input type="number" id="dirAutres" step="1000" min="0" style="width:100px"></div>
   </div>
-  <p class="src" style="margin-top:2px">« Autres revenus » : salaires du conjoint et autres revenus imposables du foyer (après abattement). L'impôt est calculé au barème réel 2026 par tranches (11 600 / 29 579 / 84 577 / 181 917 €), avec quotient familial plafonné (~1 807 € par demi-part au-delà de 2 parts).</p>
+  <p class="src aside" style="margin-top:2px">« Autres revenus » : salaires du conjoint et autres revenus imposables du foyer (après abattement). L'impôt est calculé au barème réel 2026 par tranches (11 600 / 29 579 / 84 577 / 181 917 €), avec quotient familial plafonné (~1 807 € par demi-part au-delà de 2 parts).</p>
   <div class="rang" style="row-gap:14px">
     <div style="flex:1;min-width:230px"><label class="txt">Épargne salariale / an — <b id="dirESv"></b></label><input type="range" id="dirES" min="0" max="47580" step="500" style="width:100%"></div>
     <div style="flex:1;min-width:230px"><label class="txt">PER individuel / an — <b id="dirPERv"></b> <span class="src" id="dirPERmax" style="display:inline"></span></label><input type="range" id="dirPER" min="0" max="10000" step="250" style="width:100%"></div>
@@ -351,7 +360,7 @@
     <div style="flex:1;min-width:230px"><label class="txt">Compte courant prêté — <b id="dirCCAv"></b></label><input type="range" id="dirCCA" min="0" max="300000" step="5000" style="width:100%"></div>
   </div>
   <p class="note-i" id="dirAlertes" hidden></p>
-  <p class="src">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable — plafond ~10 % des revenus pro, majoré côté TNS (+15 % de la fraction du bénéfice entre 1 et 8 PASS). CESU : ≤ 2 591 €/an (plafond 2026), zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
+  <p class="src aside">Épargne salariale = intéressement versé en PEE (≤ 36 045 €/an) + abondements PEE (≤ 3 845 €) et PERECO (≤ 7 690 €) : déductible, 0 % de forfait social sous 250 salariés, 9,7 % de CSG seulement, pas d'IR si placé — mais bloqué 5 ans et l'accord doit bénéficier aussi aux salariés. PER : versé depuis ton net, déduit du revenu imposable — plafond ~10 % des revenus pro, majoré côté TNS (+15 % de la fraction du bénéfice entre 1 et 8 PASS). CESU : ≤ 2 591 €/an (plafond 2026), zéro charge et zéro IR, à offrir à tous les salariés. Compte courant : intérêts ~4,33 % déductibles pour la société, flat tax 31,4 % pour toi.</p>
   <div class="ratiocard" id="dirObjCard" hidden style="border-left-color:var(--orange)">
     <div><div class="rv" id="dirObjVal" style="color:var(--orange)"></div></div>
     <div><div class="rl">Enveloppe nécessaire pour l'objectif</div><div class="rs" id="dirObjSub"></div></div>
@@ -371,7 +380,7 @@
   <p class="src" style="margin-top:0">Net en poche annuel selon la part versée en rémunération (le reste en dividendes). ★ = optimum de chaque forme.</p>
   <div style="overflow-x:auto"><table class="mtab" id="dirScan"></table></div>
 
-  <p class="src"><b>Ce que les chiffres ne disent pas :</b> la rémunération SASU cotise pour ta retraite comme un salarié (régime général + complémentaire) et ouvre droit aux indemnités journalières ; la rémunération TNS cotise moins mais protège moins (prévoyance Madelin à prévoir, ~100-200 €/mois). Les dividendes ne créent <b>aucun</b> droit social (ni retraite, ni maladie) et exigent des capitaux propres suffisants. 100 % dividendes = zéro trimestre de retraite validé. Estimation indicative — taux moyens 2026 (cotisations assimilé salarié ~78 % du net, TNS ~43 % du net après réforme de l'assiette) : la décision finale se valide avec l'expert-comptable, notamment pour la holding.</p>
+  <p class="src aside"><b>Ce que les chiffres ne disent pas :</b> la rémunération SASU cotise pour ta retraite comme un salarié (régime général + complémentaire) et ouvre droit aux indemnités journalières ; la rémunération TNS cotise moins mais protège moins (prévoyance Madelin à prévoir, ~100-200 €/mois). Les dividendes ne créent <b>aucun</b> droit social (ni retraite, ni maladie) et exigent des capitaux propres suffisants. 100 % dividendes = zéro trimestre de retraite validé. Estimation indicative — taux moyens 2026 (cotisations assimilé salarié ~78 % du net, TNS ~43 % du net après réforme de l'assiette) : la décision finale se valide avec l'expert-comptable, notamment pour la holding.</p>
 </div>
 </main>
 <div id="printZone"></div>
